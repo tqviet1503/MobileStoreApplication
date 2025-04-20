@@ -13,6 +13,8 @@ import com.example.mobilestore.R;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
+import com.example.mobilestore.R;
+
 public class LoginActivity extends AppCompatActivity {
 
     private EditText etUsername, etPassword;
