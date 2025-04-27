@@ -4,12 +4,19 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import com.example.mobilestore.R;
+import com.example.mobilestore.data.repository.ProductRepository;
+import com.example.mobilestore.model.Brand;
 
-public class ReportFragment extends Fragment {
+public class ReportFragment extends Fragment implements ProductRepository.OnDataChangeListener{
     private ReportViewModel viewModel;
+    private ProductRepository repository;
+    private TextView categoryValueText;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -17,13 +24,37 @@ public class ReportFragment extends Fragment {
     }
 
     @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        repository = ProductRepository.getInstance();
+        repository.addListener(this);
+    }
+
+    @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        viewModel = new ViewModelProvider(this).get(ReportViewModel.class);
-        
-        viewModel.loadReports();
-        viewModel.getReports().observe(getViewLifecycleOwner(), reports -> {
-            // TODO: Update UI with reports
-        });
+
+        // Initialize the TextView
+        categoryValueText = view.findViewById(R.id.productCategoryValue);
+
+        // Update initial value
+        updateCategoryValue();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        repository.removeListener(this);
+    }
+
+    @Override
+    public void onBrandAdded(Brand brand) {
+        updateCategoryValue();
+    }
+    private void updateCategoryValue() {
+        if (categoryValueText != null) {
+            int totalBrands = repository.getAllBrands().size();
+            categoryValueText.setText(String.valueOf(totalBrands));
+        }
     }
 }
