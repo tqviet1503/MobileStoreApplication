@@ -13,10 +13,11 @@
         android:theme="@style/Theme.MobileStore"
         tools:targetApi="31">
 
-        <!-- Login Activity (set as launcher) -->
+        <!-- Main Activity -->
         <activity
-            android:name="com.example.mobilestore.ui.login.LoginActivity"
-            android:exported="true">
+            android:name=".MainActivity"
+            android:exported="true"
+            android:noHistory="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -26,8 +27,25 @@
         <!-- Register Activity -->
         <activity android:name="com.example.mobilestore.ui.register.RegisterActivity" />
 
-        <!-- Main Activity (home screen after login) -->
-        <activity android:name=".MainActivity" />
+        <!-- Report Activity -->
+        <activity
+            android:name="com.example.mobilestore.ui.admin_report.ReportActivity"
+            android:noHistory="true" />
+
+        <!-- Product Activity -->
+        <activity
+            android:name="com.example.mobilestore.ui.admin_customer_bill.CustomerBillActivity"
+            android:noHistory="true" />
+
+        <!-- Storage Activity -->
+        <activity
+            android:name="com.example.mobilestore.ui.admin_storage.StorageActivity"
+            android:noHistory="true" />
+
+        <!-- Product Activity -->
+        <activity
+            android:name="com.example.mobilestore.ui.admin_product.ProductActivity"
+            android:noHistory="true" />
 
     </application>
 

@@ -3,7 +3,6 @@ package com.example.mobilestore.ui.login;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -14,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
 import com.example.mobilestore.R;
+import com.example.mobilestore.ui.admin_customer_bill.CustomerBillActivity;
+import com.example.mobilestore.ui.admin_report.ReportActivity;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -27,6 +28,14 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        // Kiểm tra nếu đã login thì chuyển thẳng sang ReportActivity
+        if (isLoggedIn()) {
+            Intent intent = new Intent(LoginActivity.this, ReportActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
 
         // Initialize views
         etUsername = findViewById(R.id.etUsername);
@@ -66,10 +75,17 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(this, "Please enter both email and password", Toast.LENGTH_SHORT).show();
             } else if (email.equals("admin@gmail.com") && password.equals("123456")) {
                 Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show();
-                // TODO: Navigate to MainActivity or Home screen
+                Intent intent = new Intent(LoginActivity.this, CustomerBillActivity.class);
+                startActivity(intent);
+                finish(); // Close LoginActivity
             } else {
                 Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private boolean isLoggedIn() {
+        // Kiểm tra trạng thái đăng nhập từ SharedPreferences/Session
+        return false; // Implement logic kiểm tra login status
     }
 }
