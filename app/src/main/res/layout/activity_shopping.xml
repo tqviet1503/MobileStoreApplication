@@ -3,80 +3,90 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
-    android:padding="12dp">
+    android:background="#FFFFFF"
+    android:padding="16dp">
 
-    <!-- Header: Title + Avatar -->
+    <!-- Header: Title + Avatar with improved styling -->
     <RelativeLayout
         android:id="@+id/headerLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="8dp">
+        android:paddingBottom="12dp">
 
-        <!-- Title -->
+        <!-- Title with updated font and color -->
         <TextView
             android:id="@+id/titleTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Cellphone Store"
             android:textStyle="bold"
-            android:textSize="24sp"
-            android:textColor="#212121"
+            android:textSize="28sp"
+            android:textColor="#2196F3"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
             android:fontFamily="sans-serif-medium" />
 
-        <!-- Avatar -->
+        <!-- Avatar with border color -->
         <ImageView
             android:id="@+id/avatarImageView"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
             android:layout_alignParentEnd="true"
             android:padding="2dp"
             android:src="@drawable/admin"
-            android:background="@drawable/circle_avatar_background"
-            android:scaleType="centerCrop" />
+            android:background="@drawable/circle_avatar_background_blue"
+            android:scaleType="centerCrop"
+            android:elevation="3dp" />
     </RelativeLayout>
 
-    <!-- Search Bar -->
+    <!-- Search Bar with improved styling -->
     <androidx.cardview.widget.CardView
         android:id="@+id/searchCardView"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="54dp"
         android:layout_below="@id/headerLayout"
         android:layout_marginTop="12dp"
-        app:cardCornerRadius="25dp"
-        app:cardElevation="2dp">
+        app:cardCornerRadius="27dp"
+        app:cardElevation="3dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:background="#F5F5F5">
+
+            <ImageView
+                android:id="@+id/searchIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="16dp"
+                android:src="@drawable/ic_search" />
 
             <EditText
                 android:id="@+id/searchEditText"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:layout_toEndOf="@id/searchIcon"
                 android:hint="Search for phones..."
-                android:paddingStart="16dp"
-                android:paddingEnd="48dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="16dp"
                 android:background="@null"
                 android:textColorHint="#9E9E9E"
                 android:textColor="#212121"
-                android:textSize="14sp" />
+                android:textSize="15sp" />
 
         </RelativeLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- Navigation Bar -->
+    <!-- Navigation Bar with gradient background -->
     <androidx.cardview.widget.CardView
         android:id="@+id/navBarCardView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/searchCardView"
-        android:layout_marginTop="16dp"
-        app:cardCornerRadius="25dp"
-        app:cardElevation="2dp"
-        app:cardBackgroundColor="#2196F3">
+        android:layout_marginTop="20dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="4dp">
 
         <LinearLayout
             android:id="@+id/navbar"
@@ -85,12 +95,13 @@
             android:orientation="horizontal"
             android:gravity="center"
             android:weightSum="4"
-            android:padding="4dp">
+            android:padding="5dp"
+            android:background="@drawable/nav_gradient_background">
 
             <Button
                 android:id="@+id/btnProducts"
                 android:layout_width="0dp"
-                android:layout_height="46dp"
+                android:layout_height="48dp"
                 android:layout_weight="1"
                 android:text="Phones"
                 android:textSize="11sp"
@@ -99,59 +110,60 @@
                 android:background="@drawable/selected_tab_background"
                 android:paddingTop="4dp"
                 android:textAllCaps="false"
-                android:fontFamily="sans-serif-medium" />
+                android:fontFamily="sans-serif-medium"
+                android:elevation="2dp" />
 
             <Button
                 android:id="@+id/btnShop"
                 android:layout_width="0dp"
-                android:layout_height="46dp"
+                android:layout_height="48dp"
                 android:layout_weight="1"
                 android:text="Cart"
                 android:textSize="11sp"
                 android:textStyle="bold"
-                android:textColor="#FFFFFF"
+                android:textColor="#E6FFFFFF"
                 android:background="@drawable/tab_background"
                 android:paddingTop="4dp"
                 android:textAllCaps="false"
-                android:fontFamily="sans-serif" />
+                android:fontFamily="sans-serif-medium" />
 
             <Button
                 android:id="@+id/btnPayment"
                 android:layout_width="0dp"
-                android:layout_height="46dp"
+                android:layout_height="48dp"
                 android:layout_weight="1"
                 android:text="Payment"
                 android:textSize="11sp"
                 android:textStyle="bold"
-                android:textColor="#FFFFFF"
+                android:textColor="#E6FFFFFF"
                 android:background="@drawable/tab_background"
                 android:paddingTop="4dp"
                 android:textAllCaps="false"
-                android:fontFamily="sans-serif" />
+                android:fontFamily="sans-serif-medium" />
 
             <Button
                 android:id="@+id/btnProfile"
                 android:layout_width="0dp"
-                android:layout_height="46dp"
+                android:layout_height="48dp"
                 android:layout_weight="1"
                 android:text="Profile"
                 android:textSize="11sp"
                 android:textStyle="bold"
-                android:textColor="#FFFFFF"
+                android:textColor="#E6FFFFFF"
                 android:background="@drawable/tab_background"
                 android:paddingTop="4dp"
                 android:textAllCaps="false"
-                android:fontFamily="sans-serif" />
+                android:fontFamily="sans-serif-medium" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- Category Chips -->
+    <!-- Category Chips with improved styling -->
     <HorizontalScrollView
         android:id="@+id/categoryScrollView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/navBarCardView"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="20dp"
         android:scrollbars="none">
 
         <com.google.android.material.chip.ChipGroup
@@ -159,7 +171,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:singleLine="true"
-            app:chipSpacing="8dp">
+            app:chipSpacing="10dp">
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipAll"
@@ -167,57 +179,72 @@
                 android:layout_height="wrap_content"
                 android:text="All"
                 app:chipBackgroundColor="#2196F3"
-                android:textColor="#FFFFFF" />
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                app:chipStrokeWidth="0dp"
+                app:chipMinHeight="40dp" />
 
             <com.google.android.material.chip.Chip
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="iPhone"
-                app:chipBackgroundColor="#E0E0E0"
-                android:textColor="#212121" />
+                app:chipBackgroundColor="#F0F8FF"
+                android:textColor="#2196F3"
+                app:chipStrokeWidth="1dp"
+                app:chipStrokeColor="#2196F3"
+                app:chipMinHeight="40dp" />
 
             <com.google.android.material.chip.Chip
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Samsung"
-                app:chipBackgroundColor="#E0E0E0"
-                android:textColor="#212121" />
+                app:chipBackgroundColor="#F0F8FF"
+                android:textColor="#2196F3"
+                app:chipStrokeWidth="1dp"
+                app:chipStrokeColor="#2196F3"
+                app:chipMinHeight="40dp" />
 
             <com.google.android.material.chip.Chip
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Xiaomi"
-                app:chipBackgroundColor="#E0E0E0"
-                android:textColor="#212121" />
+                app:chipBackgroundColor="#F0F8FF"
+                android:textColor="#2196F3"
+                app:chipStrokeWidth="1dp"
+                app:chipStrokeColor="#2196F3"
+                app:chipMinHeight="40dp" />
 
             <com.google.android.material.chip.Chip
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Oppo"
-                app:chipBackgroundColor="#E0E0E0"
-                android:textColor="#212121" />
+                app:chipBackgroundColor="#F0F8FF"
+                android:textColor="#2196F3"
+                app:chipStrokeWidth="1dp"
+                app:chipStrokeColor="#2196F3"
+                app:chipMinHeight="40dp" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 
-    <!-- Product Grid -->
+    <!-- Product Grid with improved layout -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/productRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/categoryScrollView"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="20dp"
         android:clipToPadding="false"
         android:paddingBottom="16dp" />
 
-    <!-- Sample Product Layout (to be used in the RecyclerView adapter) -->
-    <!-- This is just a reference and should be in a separate layout file -->
+    <!-- Sample Product Card (Reference for the RecyclerView adapter) -->
+    <!-- This should be in a separate layout file -->
     <!--
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="6dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="3dp">
+        android:layout_margin="8dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -227,7 +254,7 @@
             <ImageView
                 android:id="@+id/productImageView"
                 android:layout_width="match_parent"
-                android:layout_height="150dp"
+                android:layout_height="160dp"
                 android:scaleType="centerCrop"
                 android:src="@drawable/phone_sample" />
 
@@ -235,7 +262,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="12dp">
+                android:padding="14dp">
 
                 <TextView
                     android:id="@+id/productNameTextView"
@@ -252,7 +279,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="4dp">
+                    android:layout_marginTop="6dp">
 
                     <TextView
                         android:id="@+id/productPriceTextView"
@@ -260,8 +287,8 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="$25,990"
-                        android:textColor="#FF5722"
-                        android:textSize="15sp"
+                        android:textColor="#2196F3"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -270,8 +297,20 @@
                         android:layout_height="wrap_content"
                         android:text="4.9 ★"
                         android:textColor="#FFC107"
-                        android:textSize="14sp" />
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
+
+                <Button
+                    android:id="@+id/addToCartButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/add_to_cart_button"
+                    android:text="Add to Cart"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
