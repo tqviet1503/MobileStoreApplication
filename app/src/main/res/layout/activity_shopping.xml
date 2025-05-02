@@ -104,7 +104,7 @@
                 android:layout_height="48dp"
                 android:layout_weight="1"
                 android:text="Phones"
-                android:textSize="11sp"
+                android:textSize="8sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:background="@drawable/selected_tab_background"
@@ -119,7 +119,7 @@
                 android:layout_height="48dp"
                 android:layout_weight="1"
                 android:text="Cart"
-                android:textSize="11sp"
+                android:textSize="8sp"
                 android:textStyle="bold"
                 android:textColor="#E6FFFFFF"
                 android:background="@drawable/tab_background"
@@ -133,7 +133,7 @@
                 android:layout_height="48dp"
                 android:layout_weight="1"
                 android:text="Payment"
-                android:textSize="11sp"
+                android:textSize="8sp"
                 android:textStyle="bold"
                 android:textColor="#E6FFFFFF"
                 android:background="@drawable/tab_background"
@@ -147,7 +147,7 @@
                 android:layout_height="48dp"
                 android:layout_weight="1"
                 android:text="Profile"
-                android:textSize="11sp"
+                android:textSize="8sp"
                 android:textStyle="bold"
                 android:textColor="#E6FFFFFF"
                 android:background="@drawable/tab_background"
@@ -226,7 +226,7 @@
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 
-    <!-- Product Grid with improved layout -->
+    <!-- Product Grid with improved layout and spacing -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/productRecyclerView"
         android:layout_width="match_parent"
@@ -234,85 +234,6 @@
         android:layout_below="@id/categoryScrollView"
         android:layout_marginTop="20dp"
         android:clipToPadding="false"
-        android:paddingBottom="16dp" />
-
-    <!-- Sample Product Card (Reference for the RecyclerView adapter) -->
-    <!-- This should be in a separate layout file -->
-    <!--
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="4dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <ImageView
-                android:id="@+id/productImageView"
-                android:layout_width="match_parent"
-                android:layout_height="160dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/phone_sample" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <TextView
-                    android:id="@+id/productNameTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="iPhone 14 Pro Max"
-                    android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:maxLines="1"
-                    android:ellipsize="end"
-                    android:textColor="#212121" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="6dp">
-
-                    <TextView
-                        android:id="@+id/productPriceTextView"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="$25,990"
-                        android:textColor="#2196F3"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/productRatingTextView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="4.9 ★"
-                        android:textColor="#FFC107"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/addToCartButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="36dp"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/add_to_cart_button"
-                    android:text="Add to Cart"
-                    android:textAllCaps="false"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp" />
-            </LinearLayout>
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-    -->
+        android:paddingBottom="16dp"
+        android:paddingHorizontal="4dp" />
 </RelativeLayout>
