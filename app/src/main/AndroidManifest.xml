@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.mobilestore">
@@ -13,7 +14,7 @@
         android:theme="@style/Theme.MobileStore"
         tools:targetApi="31">
 
-        <!-- Login Activity -->
+        <!-- Login Activity (Main Entry Point) -->
         <activity
             android:name=".ui.login.LoginActivity"
             android:exported="true">
@@ -23,39 +24,39 @@
             </intent-filter>
         </activity>
 
-        <!-- Main Activity -->
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:noHistory="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
         <!-- Register Activity -->
-        <activity android:name="com.example.mobilestore.ui.register.RegisterActivity" />
-
-        <!-- Report Activity -->
         <activity
-            android:name="com.example.mobilestore.ui.admin_report.ReportActivity"
-            android:noHistory="true" />
+            android:name=".ui.register.RegisterActivity"
+            android:parentActivityName=".ui.login.LoginActivity" />
 
-        <!-- Product Activity -->
+        <!-- Admin Activities -->
         <activity
-            android:name="com.example.mobilestore.ui.admin_customer_bill.CustomerBillActivity"
-            android:noHistory="true" />
+            android:name=".ui.admin_report.ReportActivity" />
 
-        <!-- Storage Activity -->
         <activity
-            android:name="com.example.mobilestore.ui.admin_storage.StorageActivity"
-            android:noHistory="true" />
+            android:name=".ui.admin_customer_bill.CustomerBillActivity" />
 
-        <!-- Product Activity -->
         <activity
-            android:name="com.example.mobilestore.ui.admin_product.ProductActivity"
-            android:noHistory="true" />
+            android:name=".ui.admin_storage.StorageActivity" />
+
+        <activity
+            android:name=".ui.admin_product.ProductActivity" />
+
+        <!-- Customer Activities -->
+        <activity
+            android:name=".ui.shopping.ShoppingActivity" />
+
+        <activity
+            android:name=".ui.product_detail.ProductActivity"
+            android:parentActivityName=".ui.shopping.ShoppingActivity" />
+
+        <activity
+            android:name=".ui.payment.PaymentActivity"
+            android:parentActivityName=".ui.product_detail.ProductActivity" />
+
+        <activity
+            android:name=".ui.customer_profile.ProfileActivity"
+            android:parentActivityName=".ui.shopping.ShoppingActivity" />
 
     </application>
 
