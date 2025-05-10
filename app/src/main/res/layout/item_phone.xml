@@ -80,7 +80,7 @@
                 android:maxLines="2"
                 android:text="iPhone 14 Pro Max"
                 android:textColor="#212121"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
             <!-- Rating -->
@@ -126,7 +126,7 @@
                     android:layout_centerVertical="true"
                     android:text="25.990.000đ"
                     android:textColor="#2196F3"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
 
                 <ImageButton

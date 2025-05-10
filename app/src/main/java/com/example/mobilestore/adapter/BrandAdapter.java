@@ -5,6 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -23,6 +24,7 @@ public class BrandAdapter extends RecyclerView.Adapter<BrandAdapter.BrandViewHol
 
     public interface OnBrandClickListener {
         void onBrandClick(Brand brand);
+        void onAddPhoneClick(Brand brand);
     }
 
     public BrandAdapter(List<Brand> brands, OnBrandClickListener listener) {
@@ -59,13 +61,15 @@ public class BrandAdapter extends RecyclerView.Adapter<BrandAdapter.BrandViewHol
         private TextView nameText;
         private TextView countText;
         private ImageButton detailButton;
+        private LinearLayout brandPhone;
 
         public BrandViewHolder(@NonNull View itemView) {
             super(itemView);
             logoImage = itemView.findViewById(R.id.brand_logo);
             nameText = itemView.findViewById(R.id.brand_name);
             countText = itemView.findViewById(R.id.phone_count);
-            detailButton = itemView.findViewById(R.id.btn_view_detail);
+            detailButton = itemView.findViewById(R.id.btn_add_detail);
+            brandPhone = itemView.findViewById(R.id.brand_phone);
         }
 
         public void bind(Brand brand, OnBrandClickListener listener) {
@@ -74,6 +78,12 @@ public class BrandAdapter extends RecyclerView.Adapter<BrandAdapter.BrandViewHol
             countText.setText(String.format("%d phones", brand.getPhoneCount()));
 
             detailButton.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onAddPhoneClick(brand);
+                }
+            });
+
+            brandPhone.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onBrandClick(brand);
                 }

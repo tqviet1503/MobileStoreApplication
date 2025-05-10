@@ -27,16 +27,16 @@
             android:fontFamily="sans-serif-medium" />
 
         <!-- Avatar with border color -->
-        <ImageView
+        <ImageButton
             android:id="@+id/avatarImageView"
-            android:layout_width="52dp"
-            android:layout_height="52dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@android:color/transparent"
             android:padding="2dp"
-            android:src="@drawable/admin"
-            android:background="@drawable/circle_avatar_background_blue"
-            android:scaleType="centerCrop"
-            android:elevation="3dp" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/admin"/>
     </RelativeLayout>
 
     <!-- Search Bar with improved styling -->
@@ -103,8 +103,8 @@
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="Phones"
-                android:textSize="8sp"
+                android:text="Phone"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:background="@drawable/selected_tab_background"
@@ -119,7 +119,7 @@
                 android:layout_height="48dp"
                 android:layout_weight="1"
                 android:text="Cart"
-                android:textSize="8sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:textColor="#E6FFFFFF"
                 android:background="@drawable/tab_background"
@@ -132,8 +132,8 @@
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="Payment"
-                android:textSize="8sp"
+                android:text="Pay"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:textColor="#E6FFFFFF"
                 android:background="@drawable/tab_background"
@@ -147,7 +147,7 @@
                 android:layout_height="48dp"
                 android:layout_weight="1"
                 android:text="Profile"
-                android:textSize="8sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:textColor="#E6FFFFFF"
                 android:background="@drawable/tab_background"
@@ -187,7 +187,7 @@
             <com.google.android.material.chip.Chip
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="iPhone"
+                android:text="Apple"
                 app:chipBackgroundColor="#F0F8FF"
                 android:textColor="#2196F3"
                 app:chipStrokeWidth="1dp"
