@@ -451,13 +451,12 @@ public class ShoppingActivity extends AppCompatActivity {
                         // Cập nhật: Chuyển thông tin sản phẩm đến màn hình chi tiết
                         // thay vì gọi btnShop.performClick()
                         try {
-                            Toast.makeText(context, "Added " + product.getName() + " to cart", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(context, "Added " + product.getPhoneName() + " to cart", Toast.LENGTH_SHORT).show();
 
                             // Tạo Intent với thông tin sản phẩm đầy đủ
                             Intent intent = new Intent(context, ProductActivity.class);
-                            intent.putExtra("PRODUCT_NAME", product.getName());
+                            intent.putExtra("PRODUCT_NAME", product.getPhoneName());
                             intent.putExtra("PRODUCT_PRICE", product.getPrice());
-                            intent.putExtra("PRODUCT_SPECS", product.getCategory() + " smartphone");
                             intent.putExtra("FROM_CART", true); // Thêm flag để biết đây là từ nút Add to Cart
 
                             // Bắt đầu Activity
