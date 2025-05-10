@@ -113,7 +113,7 @@ public class LoginActivity extends AppCompatActivity {
                         Toast.makeText(this, "Please enter both email and password", Toast.LENGTH_SHORT).show();
                     } else if (email.equals("admin@gmail.com") && password.equals("123456")) {
                         // Admin login
-                        saveLoginStatus(true, "admin", email);
+//                        saveLoginStatus(true, "admin", email);
                         Toast.makeText(this, "Admin login successful!", Toast.LENGTH_SHORT).show();
                         try {
                             Intent intent = new Intent(LoginActivity.this, CustomerBillActivity.class);
@@ -124,7 +124,7 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     } else if (email.equals("customer@gmail.com") && password.equals("123456")) {
                         // Customer login
-                        saveLoginStatus(true, "customer", email);
+//                        saveLoginStatus(true, "customer", email);
                         Toast.makeText(this, "Customer login successful!", Toast.LENGTH_SHORT).show();
                         try {
                             Intent intent = new Intent(LoginActivity.this, ShoppingActivity.class);

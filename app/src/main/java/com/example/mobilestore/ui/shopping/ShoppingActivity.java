@@ -24,6 +24,9 @@ import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.mobilestore.data.repository.ProductRepository;
+import com.example.mobilestore.model.Brand;
+import com.example.mobilestore.model.Phone;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
@@ -48,8 +51,9 @@ public class ShoppingActivity extends AppCompatActivity {
     private RecyclerView productRecyclerView;
 
     // Data
-    private List<Product> allProductList;  // Lưu trữ tất cả sản phẩm
-    private List<Product> filteredProductList;  // Lưu trữ các sản phẩm đã lọc
+    private List<Phone> allPhones;
+    private List<Phone> filteredPhones;
+    private ProductRepository repository;
     private ProductAdapter productAdapter;
     private String currentCategory = "All";  // Danh mục hiện tại
     private String currentSearchQuery = "";  // Truy vấn tìm kiếm hiện tại
@@ -60,8 +64,9 @@ public class ShoppingActivity extends AppCompatActivity {
         try {
             setContentView(R.layout.activity_shopping);
             initializeViews();
-            setupRecyclerView();
             setupNavigationButtons();
+            repository = ProductRepository.getInstance(this);
+            setupRecyclerView();
             setupCategoryChips();
             setupSearch();
         } catch (Exception e) {
@@ -91,9 +96,9 @@ public class ShoppingActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
         try {
-            // Create sample product data
-            allProductList = new ArrayList<>();
-            filteredProductList = new ArrayList<>();
+            // xài phone chỗ này thay vì product như cũ
+            allPhones = new ArrayList<>();
+            filteredPhones = new ArrayList<>();
 
             // Check if drawable exists
             int phoneImageResource;
@@ -105,16 +110,22 @@ public class ShoppingActivity extends AppCompatActivity {
                 phoneImageResource = android.R.drawable.ic_menu_gallery;
             }
 
+            //tạm thời không xài static nữa
             // Create sample product list with formatted currency and proper category
-            allProductList.add(new Product("iPhone 14 Pro Max", "$1,199", 4.9f, phoneImageResource, "iPhone"));
-            allProductList.add(new Product("Samsung Galaxy S23 Ultra", "$1,099", 4.7f, phoneImageResource, "Samsung"));
-            allProductList.add(new Product("Xiaomi 13 Pro", "$799", 4.5f, phoneImageResource, "Xiaomi"));
-            allProductList.add(new Product("Oppo Find X5 Pro", "$899", 4.6f, phoneImageResource, "Oppo"));
-            allProductList.add(new Product("iPhone 14", "$899", 4.8f, phoneImageResource, "iPhone"));
-            allProductList.add(new Product("Samsung Galaxy S23", "$849", 4.6f, phoneImageResource, "Samsung"));
+//            allProductList.add(new Product("iPhone 14 Pro Max", "$1,199", 4.9f, phoneImageResource, "iPhone"));
+//            allProductList.add(new Product("Samsung Galaxy S23 Ultra", "$1,099", 4.7f, phoneImageResource, "Samsung"));
+//            allProductList.add(new Product("Xiaomi 13 Pro", "$799", 4.5f, phoneImageResource, "Xiaomi"));
+//            allProductList.add(new Product("Oppo Find X5 Pro", "$899", 4.6f, phoneImageResource, "Oppo"));
+//            allProductList.add(new Product("iPhone 14", "$899", 4.8f, phoneImageResource, "iPhone"));
+//            allProductList.add(new Product("Samsung Galaxy S23", "$849", 4.6f, phoneImageResource, "Samsung"));
+            // get các brand từ database
+            List<String> brands = getAllBrandNames();
+            for (String brand : brands) {
+                allPhones.addAll(repository.getPhonesForBrand(brand));
+            }
 
-            // Ban đầu, sao chép tất cả sản phẩm vào danh sách đã lọc
-            filteredProductList.addAll(allProductList);
+            // chắc là filter
+            filteredPhones.addAll(allPhones);
 
             // Set up the RecyclerView with a grid layout (2 columns)
             if (productRecyclerView != null) {
@@ -126,12 +137,20 @@ public class ShoppingActivity extends AppCompatActivity {
                 productRecyclerView.addItemDecoration(new GridSpacingItemDecoration(2, spacingInPixels, true));
 
                 // Create and set the adapter with the new item_phone layout
-                productAdapter = new ProductAdapter(filteredProductList, this);
+                productAdapter = new ProductAdapter(filteredPhones, this);
                 productRecyclerView.setAdapter(productAdapter);
             }
         } catch (Exception e) {
             Toast.makeText(this, "Error setting up products: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private List<String> getAllBrandNames() {
+        List<String> brandNames = new ArrayList<>();
+        for (Brand brand : repository.getAllBrands()) {
+            brandNames.add(brand.getName());
+        }
+        return brandNames;
     }
 
     private void setupNavigationButtons() {
@@ -230,25 +249,24 @@ public class ShoppingActivity extends AppCompatActivity {
         applyFilters();
     }
 
+    //chỉnh lại chỗ filter này theo phone
     private void applyFilters() {
-        filteredProductList.clear();
-        for (Product product : allProductList) {
-            boolean matchesCategory = currentCategory.equals("All") || product.getCategory().equals(currentCategory);
+        filteredPhones.clear();
+        for (Phone phone : allPhones) {
+            boolean matchesCategory = currentCategory.equals("All") || phone.getBrand().equals(currentCategory);
             boolean matchesSearch = currentSearchQuery.isEmpty() ||
-                    product.getName().toLowerCase().contains(currentSearchQuery.toLowerCase()) ||
-                    product.getCategory().toLowerCase().contains(currentSearchQuery.toLowerCase());
+                    phone.getPhoneName().toLowerCase().contains(currentSearchQuery.toLowerCase()) ||
+                    phone.getBrand().toLowerCase().contains(currentSearchQuery.toLowerCase());
 
             if (matchesCategory && matchesSearch) {
-                filteredProductList.add(product);
+                filteredPhones.add(phone);
             }
         }
 
-        // Thông báo kết quả tìm kiếm
-        if (filteredProductList.isEmpty()) {
-            Toast.makeText(this, "No products found", Toast.LENGTH_SHORT).show();
+        if (filteredPhones.isEmpty()) {
+            Toast.makeText(this, "No phones found", Toast.LENGTH_SHORT).show();
         }
 
-        // Cập nhật adapter để hiển thị các sản phẩm đã lọc
         productAdapter.notifyDataSetChanged();
     }
 
@@ -300,49 +318,49 @@ public class ShoppingActivity extends AppCompatActivity {
     }
 
     // Model class for Product with additional category field
-    public static class Product {
-        private String name;
-        private String price;
-        private float rating;
-        private int imageResId;
-        private String category;
-
-        public Product(String name, String price, float rating, int imageResId, String category) {
-            this.name = name;
-            this.price = price;
-            this.rating = rating;
-            this.imageResId = imageResId;
-            this.category = category;
-        }
-
-        // Getters
-        public String getName() {
-            return name;
-        }
-
-        public String getPrice() {
-            return price;
-        }
-
-        public float getRating() {
-            return rating;
-        }
-
-        public int getImageResId() {
-            return imageResId;
-        }
-
-        public String getCategory() {
-            return category;
-        }
-    }
+//    public static class Product {
+//        private String name;
+//        private String price;
+//        private float rating;
+//        private int imageResId;
+//        private String category;
+//
+//        public Product(String name, String price, float rating, int imageResId, String category) {
+//            this.name = name;
+//            this.price = price;
+//            this.rating = rating;
+//            this.imageResId = imageResId;
+//            this.category = category;
+//        }
+//
+//        // Getters
+//        public String getName() {
+//            return name;
+//        }
+//
+//        public String getPrice() {
+//            return price;
+//        }
+//
+//        public float getRating() {
+//            return rating;
+//        }
+//
+//        public int getImageResId() {
+//            return imageResId;
+//        }
+//
+//        public String getCategory() {
+//            return category;
+//        }
+//    }
 
     // Adapter class for RecyclerView using the new item_phone.xml layout
     public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductViewHolder> {
-        private List<Product> products;
+        private List<Phone> products;
         private ShoppingActivity context;
 
-        public ProductAdapter(List<Product> products, ShoppingActivity context) {
+        public ProductAdapter(List<Phone> products, ShoppingActivity context) {
             this.products = products;
             this.context = context;
         }
@@ -378,34 +396,34 @@ public class ShoppingActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(ProductViewHolder holder, int position) {
             try {
-                Product product = products.get(position);
+                Phone product = products.get(position);
 
                 // Display product information with the new layout
                 if (holder.tvPhoneName != null) {
-                    holder.tvPhoneName.setText(product.getName());
+                    holder.tvPhoneName.setText(product.getPhoneName());
                 }
 
                 if (holder.tvPrice != null) {
-                    holder.tvPrice.setText(product.getPrice());
+                    holder.tvPrice.setText(String.format("%,.0fđ", product.getPrice()));
                 }
+//
+//                if (holder.ratingBar != null) {
+//                    holder.ratingBar.setRating(product.getRating());
+//                }
 
-                if (holder.ratingBar != null) {
-                    holder.ratingBar.setRating(product.getRating());
-                }
-
-                if (holder.tvRatingValue != null) {
-                    holder.tvRatingValue.setText(String.valueOf(product.getRating()));
-                }
+//                if (holder.tvRatingValue != null) {
+//                    holder.tvRatingValue.setText(String.valueOf(product.getRating()));
+//                }
 
                 // Display brand from product category
                 if (holder.tvBrand != null) {
-                    holder.tvBrand.setText(product.getCategory());
+                    holder.tvBrand.setText(product.getBrand());
                 }
 
                 // Display product image
-                if (holder.imgPhone != null) {
-                    holder.imgPhone.setImageResource(product.getImageResId());
-                }
+//                if (holder.imgPhone != null) {
+//                    holder.imgPhone.setImageResource(product.getImageResId());
+//                }
 
                 // Show "New" badge for some products
                 if (holder.tvBadge != null) {
@@ -423,11 +441,11 @@ public class ShoppingActivity extends AppCompatActivity {
                         if (isFavorite) {
                             holder.btnFavorite.setImageResource(R.drawable.ic_favorite_border);
                             holder.btnFavorite.setTag(false);
-                            Toast.makeText(context, "Removed " + product.getName() + " from favorites", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(context, "Removed " + product.getPhoneName() + " from favorites", Toast.LENGTH_SHORT).show();
                         } else {
                             holder.btnFavorite.setImageResource(R.drawable.ic_favorite);
                             holder.btnFavorite.setTag(true);
-                            Toast.makeText(context, "Added " + product.getName() + " to favorites", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(context, "Added " + product.getPhoneName() + " to favorites", Toast.LENGTH_SHORT).show();
                         }
                     });
                     holder.btnFavorite.setTag(false);
@@ -436,7 +454,7 @@ public class ShoppingActivity extends AppCompatActivity {
                 // Set up event for add to cart button
                 if (holder.btnAddToCart != null) {
                     holder.btnAddToCart.setOnClickListener(v -> {
-                        Toast.makeText(context, "Added " + product.getName() + " to cart", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, "Added " + product.getPhoneName() + " to cart", Toast.LENGTH_SHORT).show();
                         if (context.btnShop != null) {
                             new android.os.Handler().postDelayed(() -> {
                                 context.btnShop.performClick();
@@ -520,12 +538,11 @@ public class ShoppingActivity extends AppCompatActivity {
         }
     }
 
-    private void goToProductDetail(Product product) {
+    private void goToProductDetail(Phone phone) {
         try {
-            // Pass product information to the detail screen
             Intent intent = new Intent(ShoppingActivity.this, ProductActivity.class);
-            intent.putExtra("PRODUCT_NAME", product.getName());
-            intent.putExtra("PRODUCT_PRICE", product.getPrice());
+            intent.putExtra("PRODUCT_NAME", phone.getPhoneName());
+            intent.putExtra("PRODUCT_PRICE", String.format("%,.0fđ", phone.getPrice()));
             startActivity(intent);
         } catch (Exception e) {
             Toast.makeText(this, "Error navigating to product details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -557,9 +574,9 @@ public class ShoppingActivity extends AppCompatActivity {
         int numItemsInCart = 0;
 
         // Kiểm tra số sản phẩm mà người dùng đã thêm vào giỏ hàng
-        for (Product product : allProductList) {
+        for (Phone product : allPhones) {
             if (Math.random() > 0.7) {
-                cartItems.append("• ").append(product.getName())
+                cartItems.append("• ").append(product.getPhoneName())
                         .append(" - ").append(product.getPrice())
                         .append("\n");
                 numItemsInCart++;

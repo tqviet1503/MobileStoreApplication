@@ -12,11 +12,13 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.mobilestore.R;
 import com.example.mobilestore.data.repository.ProductRepository;
 import com.example.mobilestore.model.Brand;
+import com.example.mobilestore.model.Phone;
 
 public class ReportFragment extends Fragment implements ProductRepository.OnDataChangeListener{
     private ReportViewModel viewModel;
     private ProductRepository repository;
     private TextView categoryValueText;
+    private TextView phoneCountText;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -26,7 +28,7 @@ public class ReportFragment extends Fragment implements ProductRepository.OnData
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        repository = ProductRepository.getInstance();
+        repository = ProductRepository.getInstance(requireContext());
         repository.addListener(this);
     }
 
@@ -36,9 +38,9 @@ public class ReportFragment extends Fragment implements ProductRepository.OnData
 
         // Initialize the TextView
         categoryValueText = view.findViewById(R.id.productCategoryValue);
-
+        phoneCountText = view.findViewById(R.id.totalProductValue);
         // Update initial value
-        updateCategoryValue();
+        updateValues();
     }
 
     @Override
@@ -49,12 +51,34 @@ public class ReportFragment extends Fragment implements ProductRepository.OnData
 
     @Override
     public void onBrandAdded(Brand brand) {
-        updateCategoryValue();
+        updateValues();
     }
-    private void updateCategoryValue() {
-        if (categoryValueText != null) {
-            int totalBrands = repository.getAllBrands().size();
-            categoryValueText.setText(String.valueOf(totalBrands));
+
+    @Override
+    public void onPhoneAdded(Phone phone) {
+        updateValues();
+    }
+    private void updateValues() {
+        if (getActivity() == null) return;
+
+        getActivity().runOnUiThread(() -> {
+            if (categoryValueText != null) {
+                int totalBrands = repository.getAllBrands().size();
+                categoryValueText.setText(String.valueOf(totalBrands));
+            }
+
+            if (phoneCountText != null) {
+                int totalPhones = getTotalPhones();
+                phoneCountText.setText(String.valueOf(totalPhones));
+            }
+        });
+    }
+
+    private int getTotalPhones() {
+        int total = 0;
+        for (Brand brand : repository.getAllBrands()) {
+            total += brand.getPhoneCount();
         }
+        return total;
     }
 }

@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.mobilestore.data.repository.ProductRepository;
+import com.example.mobilestore.model.Phone;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.example.mobilestore.R;
 import com.example.mobilestore.adapter.BrandAdapter;
@@ -30,7 +32,7 @@ public class StorageFragment extends Fragment implements BrandAdapter.OnBrandCli
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        repository = ProductRepository.getInstance();
+        repository = ProductRepository.getInstance(requireContext());
     }
 
     @Override
@@ -94,6 +96,84 @@ public class StorageFragment extends Fragment implements BrandAdapter.OnBrandCli
 
     @Override
     public void onBrandClick(Brand brand) {
-        // Xử lý khi click vào một brand
+        getParentFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, PhoneListFragment.newInstance(brand.getName()))
+                .addToBackStack(null)
+                .commit();
+    }
+
+    @Override
+    public void onAddPhoneClick(Brand brand) {
+        showAddPhoneDialog(brand);
+    }
+
+    private void showAddPhoneDialog(Brand brand) {
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.phone_input_dialog, null);
+
+        EditText phoneNameEdit = dialogView.findViewById(R.id.edit_phone_name);
+        EditText modelEdit = dialogView.findViewById(R.id.edit_model);
+        EditText priceEdit = dialogView.findViewById(R.id.edit_price);
+        EditText processorEdit = dialogView.findViewById(R.id.edit_processor);
+        EditText ramEdit = dialogView.findViewById(R.id.edit_ram);
+        EditText storageEdit = dialogView.findViewById(R.id.edit_storage);
+        EditText batteryEdit = dialogView.findViewById(R.id.edit_battery);
+        EditText stockEdit = dialogView.findViewById(R.id.edit_stock);
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Add New Phone")
+                .setView(dialogView)
+                .setPositiveButton("Add", (dialog, which) -> {
+                    try {
+                        if (!validateInputs(phoneNameEdit, modelEdit, priceEdit,
+                                processorEdit, ramEdit, storageEdit, batteryEdit, stockEdit)) {
+                            Toast.makeText(getContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        String phoneName = phoneNameEdit.getText().toString().trim();
+                        String model = modelEdit.getText().toString().trim();
+                        double price = Double.parseDouble(priceEdit.getText().toString());
+                        String processor = processorEdit.getText().toString().trim();
+                        int ram = Integer.parseInt(ramEdit.getText().toString());
+                        int storage = Integer.parseInt(storageEdit.getText().toString());
+                        String battery = batteryEdit.getText().toString().trim(); // Get battery value
+                        int stock = Integer.parseInt(stockEdit.getText().toString());
+
+                        Phone.PhonePerformance performance = new Phone.PhonePerformance(
+                                processor,
+                                ram,
+                                storage,
+                                battery
+                        );
+
+                        Phone newPhone = new Phone(
+                                String.valueOf(System.currentTimeMillis()),
+                                model,
+                                brand.getName(),
+                                price,
+                                performance,
+                                phoneName,
+                                stock
+                        );
+
+                        repository.addPhone(brand.getName(), newPhone);
+                        adapter.updateBrands(repository.getAllBrands());
+                        updateTotalProductValue();
+
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(getContext(), "Please enter valid numbers", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private boolean validateInputs(EditText... inputs) {
+        for (EditText input : inputs) {
+            if (input.getText().toString().trim().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 }
