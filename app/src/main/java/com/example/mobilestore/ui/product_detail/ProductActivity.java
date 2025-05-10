@@ -11,7 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
+import android.widget.RelativeLayout;
 import com.example.mobilestore.R;
 
 public class ProductActivity extends AppCompatActivity {
@@ -21,7 +21,7 @@ public class ProductActivity extends AppCompatActivity {
     private ImageView avatarImageView;
     private ImageButton btnDecrease, btnIncrease;
     private Button btnCheckout;
-    private CardView headerLayout;
+    private RelativeLayout headerLayout;
 
     // Data
     private Product selectedProduct;
