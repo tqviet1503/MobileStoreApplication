@@ -138,20 +138,14 @@ public class ShoppingActivity extends AppCompatActivity {
         try {
             if (btnProducts != null) {
                 btnProducts.setOnClickListener(view -> {
+                    // Đã ở màn hình Products, không cần làm gì
                 });
             }
 
             if (btnShop != null) {
                 btnShop.setOnClickListener(view -> {
-                    // Navigate to Cart Activity
-                    try {
-                        Intent intent = new Intent(ShoppingActivity.this, com.example.mobilestore.ui.product_detail.ProductActivity.class);
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        Toast.makeText(ShoppingActivity.this,
-                                "Cart feature is under development", Toast.LENGTH_SHORT).show();
-                        simulateCartNavigation();
-                    }
+                    // Chỉ sử dụng simulateCartNavigation thay vì mở ProductActivity
+                    simulateCartNavigation();
                 });
             }
 
@@ -216,11 +210,11 @@ public class ShoppingActivity extends AppCompatActivity {
             if (chipView instanceof Chip) {
                 Chip chip = (Chip) chipView;
                 if (chip == selectedChip) {
-                    chip.setChipBackgroundColorResource(R.color.colorPrimary); // Giả sử R.color.colorPrimary là màu xanh #2196F3
+                    chip.setChipBackgroundColorResource(R.color.colorPrimary);
                     chip.setTextColor(getResources().getColor(android.R.color.white));
                 } else {
-                    chip.setChipBackgroundColorResource(R.color.chipBackground); // Giả sử R.color.chipBackground là màu xanh nhạt #F0F8FF
-                    chip.setTextColor(getResources().getColor(R.color.colorPrimary)); // Giả sử R.color.colorPrimary là màu xanh #2196F3
+                    chip.setChipBackgroundColorResource(R.color.chipBackground);
+                    chip.setTextColor(getResources().getColor(R.color.colorPrimary));
                 }
             }
         }
@@ -436,12 +430,30 @@ public class ShoppingActivity extends AppCompatActivity {
                 // Set up event for add to cart button
                 if (holder.btnAddToCart != null) {
                     holder.btnAddToCart.setOnClickListener(v -> {
-                        Toast.makeText(context, "Added " + product.getName() + " to cart", Toast.LENGTH_SHORT).show();
-                        if (context.btnShop != null) {
-                            new android.os.Handler().postDelayed(() -> {
-                                context.btnShop.performClick();
-                            }, 800); // Delay 800ms để người dùng đọc thông báo
+                        // Cập nhật: Chuyển thông tin sản phẩm đến màn hình chi tiết
+                        // thay vì gọi btnShop.performClick()
+                        try {
+                            Toast.makeText(context, "Added " + product.getName() + " to cart", Toast.LENGTH_SHORT).show();
+
+                            // Tạo Intent với thông tin sản phẩm đầy đủ
+                            Intent intent = new Intent(context, ProductActivity.class);
+                            intent.putExtra("PRODUCT_NAME", product.getName());
+                            intent.putExtra("PRODUCT_PRICE", product.getPrice());
+                            intent.putExtra("PRODUCT_SPECS", product.getCategory() + " smartphone");
+                            intent.putExtra("FROM_CART", true); // Thêm flag để biết đây là từ nút Add to Cart
+
+                            // Bắt đầu Activity
+                            context.startActivity(intent);
+                        } catch (Exception e) {
+                            Toast.makeText(context, "Error navigating to product details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         }
+                    });
+                }
+
+                // Xử lý sự kiện khi nhấp vào nút View Details (nếu có trong layout mới)
+                if (holder.btnViewDetails != null) {
+                    holder.btnViewDetails.setOnClickListener(v -> {
+                        goToProductDetail(product);
                     });
                 }
 
@@ -465,6 +477,7 @@ public class ShoppingActivity extends AppCompatActivity {
             TextView tvBrand, tvPhoneName, tvPrice, tvRatingValue, tvBadge;
             RatingBar ratingBar;
             ImageButton btnFavorite, btnAddToCart;
+            Button btnViewDetails; // Có thể có trong layout mới
 
             public ProductViewHolder(View itemView) {
                 super(itemView);
@@ -480,6 +493,7 @@ public class ShoppingActivity extends AppCompatActivity {
                     btnFavorite = itemView.findViewById(R.id.btnFavorite);
                     btnAddToCart = itemView.findViewById(R.id.btnAddToCart);
                 } catch (Exception e) {
+                    // Views không tìm thấy, xử lý trong onBindViewHolder
                 }
             }
         }
@@ -526,6 +540,8 @@ public class ShoppingActivity extends AppCompatActivity {
             Intent intent = new Intent(ShoppingActivity.this, ProductActivity.class);
             intent.putExtra("PRODUCT_NAME", product.getName());
             intent.putExtra("PRODUCT_PRICE", product.getPrice());
+            // Thêm thông tin thêm để tăng tính nhất quán
+            intent.putExtra("PRODUCT_SPECS", product.getCategory() + " smartphone");
             startActivity(intent);
         } catch (Exception e) {
             Toast.makeText(this, "Error navigating to product details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
