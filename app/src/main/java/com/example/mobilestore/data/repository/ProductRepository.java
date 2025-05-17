@@ -14,7 +14,7 @@ public class ProductRepository {
     private static ProductRepository instance;
     private final AppDatabase database;
     private final List<OnDataChangeListener> listeners;
-    private SQLiteDatabase db;
+    public SQLiteDatabase db;
 
     public interface OnDataChangeListener {
         void onBrandAdded(Brand brand);

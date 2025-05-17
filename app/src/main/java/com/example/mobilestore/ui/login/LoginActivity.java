@@ -116,7 +116,7 @@ public class LoginActivity extends AppCompatActivity {
 //                        saveLoginStatus(true, "admin", email);
                         Toast.makeText(this, "Admin login successful!", Toast.LENGTH_SHORT).show();
                         try {
-                            Intent intent = new Intent(LoginActivity.this, CustomerBillActivity.class);
+                            Intent intent = new Intent(LoginActivity.this, ReportActivity.class);
                             startActivity(intent);
                             finish(); // Close LoginActivity
                         } catch (Exception e) {

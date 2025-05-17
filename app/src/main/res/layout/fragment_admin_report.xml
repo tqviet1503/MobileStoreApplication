@@ -48,12 +48,13 @@
                     android:textSize="16sp" />
 
                 <TextView
+                    android:id="@+id/totalProfitTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10dp"
                     android:layout_marginTop="12dp"
                     android:textColor="@color/white"
-                    android:text="$ 15.237.000"
+                    android:text="VND 0"
                     android:textSize="32dp"
                     android:textStyle="bold" />
 
@@ -216,7 +217,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingTop="12dp"
-                        android:text="11.967"
+                        android:text="0"
                         android:textSize="30dp"
                         android:textStyle="bold" />
 
@@ -263,7 +264,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingTop="12dp"
-                        android:text="1000 $"
+                        android:text="0 VND"
                         android:textSize="30dp"
                         android:textStyle="bold" />
 

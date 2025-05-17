@@ -1,7 +1,10 @@
 package com.example.mobilestore.ui.payment;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -23,6 +26,7 @@ import com.example.mobilestore.model.Order;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 
 public class PaymentActivity extends AppCompatActivity {
 
@@ -475,6 +479,26 @@ public class PaymentActivity extends AppCompatActivity {
         }
     }
 
+    private boolean checkStockAvailability(SQLiteDatabase db, String phoneName, int orderQuantity) {
+        Cursor cursor = db.query(
+                "phones",
+                new String[]{"stock_quantity"},
+                "phone_name = ?",
+                new String[]{phoneName},
+                null, null, null
+        );
+
+        try {
+            if (cursor.moveToFirst()) {
+                int stockQuantity = cursor.getInt(cursor.getColumnIndexOrThrow("stock_quantity"));
+                return stockQuantity >= orderQuantity;
+            }
+            return false;
+        } finally {
+            cursor.close();
+        }
+    }
+
     private void placeOrder() {
         try {
             // Lấy thông tin shipping
@@ -504,44 +528,152 @@ public class PaymentActivity extends AppCompatActivity {
                 }
             }
 
-            // Hiển thị hộp thoại xác nhận với thông tin đơn hàng đã cập nhật
-            new AlertDialog.Builder(this)
-                    .setTitle("Order Confirmation")
-                    .setMessage("Your order details:\n" +
-                            "  • Product: " + productName + "\n" +
-                            "  • Quantity: " + quantity + "\n" +
-                            "  • Price: " + formatPrice(unitPrice) + "\n" +
-                            "  • Voucher: " + (isDiscountApplied ? "-20%" : "0%") + "\n" +
-                            "  • Total Price: " + formatPrice(totalPrice) + "\n\n" +
-                            "Shipping Information:\n" +
-                            "  • Name: " + name + "\n" +
-                            "  • Address: " + address + "\n" +
-                            "  • Notes: " + notes + "\n\n" +
-                            "Your order has been placed successfully!")
-                    .setPositiveButton("View Profile", (dialog, which) -> {
-                        try {
-                            Intent profileIntent = new Intent(PaymentActivity.this, ProfileActivity.class);
-                            startActivity(profileIntent);
-                            finish();
-                        } catch (Exception e) {
-                            Toast.makeText(PaymentActivity.this, "Error navigating to profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    })
-                    .setNegativeButton("Back to Shopping", (dialog, which) -> {
-                        try {
-                            Intent intent = new Intent(PaymentActivity.this, com.example.mobilestore.ui.shopping.ShoppingActivity.class);
-                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                            startActivity(intent);
+            SQLiteDatabase db = repository.db;
 
-                            // Hiển thị toast
-                            Toast.makeText(PaymentActivity.this, "Thank you for your order!", Toast.LENGTH_LONG).show();
-                        } catch (Exception e) {
-                            Toast.makeText(PaymentActivity.this, "Error returning to shop: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                            finish();
-                        }
-                    })
-                    .setCancelable(false)
-                    .show();
+            //check so luong
+            if (!checkStockAvailability(db, productName, quantity)) {
+                Toast.makeText(this,
+                        "Not enough stock available. Please reduce quantity.",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            db.beginTransaction();
+            try {
+                long customerId;
+                Cursor customerCursor = db.query("customers",
+                        new String[]{"id"},
+                        "name = ?",
+                        new String[]{name},
+                        null, null, null);
+
+                if (customerCursor.moveToFirst()) {
+                    // update customer
+                    customerId = customerCursor.getLong(customerCursor.getColumnIndexOrThrow("id"));
+                    ContentValues customerValues = new ContentValues();
+                    customerValues.put("address", address);
+                    customerValues.put("updated_at", System.currentTimeMillis());
+                    customerValues.put("total_orders", customerDataManager.getTotalOrders() + 1);
+                    customerValues.put("total_spent", customerDataManager.getTotalSpent() + totalPrice);
+                    customerValues.put("loyalty_points", customerDataManager.getLoyaltyPoints() + (int)(totalPrice/100000));
+
+                    db.update("customers", customerValues, "id = ?",
+                            new String[]{String.valueOf(customerId)});
+                } else {
+                    // them customer neu chua co
+                    ContentValues customerValues = new ContentValues();
+                    customerId = System.currentTimeMillis(); // Generate new ID
+                    customerValues.put("id", customerId);
+                    customerValues.put("name", name);
+                    customerValues.put("phone", customerDataManager.getCustomerPhone()); // Add phone
+                    customerValues.put("email", customerDataManager.getCustomerEmail()); // Add email
+                    customerValues.put("address", address);
+                    customerValues.put("total_orders", 1); // First order
+                    customerValues.put("total_spent", totalPrice);
+                    customerValues.put("loyalty_points", (int)(totalPrice/100000));
+                    customerValues.put("created_at", System.currentTimeMillis());
+                    customerValues.put("updated_at", System.currentTimeMillis());
+
+                    customerId = db.insert("customers", null, customerValues);
+                    if (customerId == -1) {
+                        throw new Exception("Failed to insert customer");
+                    }
+                }
+                customerCursor.close();
+                Random random = new Random();
+                long billId = random.nextInt(1_000_000);
+
+                ContentValues billValues = new ContentValues();
+                billValues.put("id", billId);
+                billValues.put("customer_id", customerId);
+                billValues.put("total_amount", totalPrice);
+                db.insert("bills", null, billValues);
+
+                // tao bill va luu bill vao database
+                ContentValues detailValues = new ContentValues();
+                detailValues.put("bill_id", billId);
+                detailValues.put("phone_id", getPhoneIdByName(productName));
+                detailValues.put("quantity", quantity);
+                detailValues.put("unit_price", unitPrice);
+                db.insert("bill_details", null, detailValues);
+
+                //update profit
+                Cursor profitCursor = db.query("profit", null, null, null,
+                        null, null, null);
+
+                if (profitCursor.moveToFirst()) {
+                    // neu da co profit thi update
+                    int currentTotalSold = profitCursor.getInt(
+                            profitCursor.getColumnIndexOrThrow("total_sold"));
+                    double currentIncome = profitCursor.getDouble(
+                            profitCursor.getColumnIndexOrThrow("income"));
+
+                    ContentValues profitValues = new ContentValues();
+                    profitValues.put("total_sold", currentTotalSold + quantity);
+                    profitValues.put("income", currentIncome + totalPrice);
+
+                    db.update("profit", profitValues, null, null);
+                } else {
+                    // neu khong thi tao profit moi
+                    ContentValues profitValues = new ContentValues();
+                    profitValues.put("total_sold", quantity);
+                    profitValues.put("income", totalPrice);
+
+                    db.insert("profit", null, profitValues);
+                }
+                profitCursor.close();
+
+                // update so luong dien thoai trong database
+                db.execSQL(
+                        "UPDATE phones SET stock_quantity = stock_quantity - ? WHERE phone_name = ?",
+                        new Object[]{quantity, productName}
+                );
+
+                // hoan thanh transaction
+                db.setTransactionSuccessful();
+
+                // Hiển thị hộp thoại xác nhận với thông tin đơn hàng đã cập nhật
+                new AlertDialog.Builder(this)
+                        .setTitle("Order Confirmation")
+                        .setMessage("Your order details:\n" +
+                                "  • Product: " + productName + "\n" +
+                                "  • Quantity: " + quantity + "\n" +
+                                "  • Price: " + formatPrice(unitPrice) + "\n" +
+                                "  • Voucher: " + (isDiscountApplied ? "-20%" : "0%") + "\n" +
+                                "  • Total Price: " + formatPrice(totalPrice) + "\n\n" +
+                                "Shipping Information:\n" +
+                                "  • Name: " + name + "\n" +
+                                "  • Address: " + address + "\n" +
+                                "  • Notes: " + notes + "\n\n" +
+                                "Your order has been placed successfully!")
+                        .setPositiveButton("View Profile", (dialog, which) -> {
+                            try {
+                                Intent profileIntent = new Intent(PaymentActivity.this, ProfileActivity.class);
+                                startActivity(profileIntent);
+                                finish();
+                            } catch (Exception e) {
+                                Toast.makeText(PaymentActivity.this, "Error navigating to profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                        .setNegativeButton("Back to Shopping", (dialog, which) -> {
+                            try {
+                                Intent intent = new Intent(PaymentActivity.this, com.example.mobilestore.ui.shopping.ShoppingActivity.class);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                startActivity(intent);
+
+                                // Hiển thị toast
+                                Toast.makeText(PaymentActivity.this, "Thank you for your order!", Toast.LENGTH_LONG).show();
+                            } catch (Exception e) {
+                                Toast.makeText(PaymentActivity.this, "Error returning to shop: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                finish();
+                            }
+                        })
+                        .setCancelable(false)
+                        .show();
+            }
+            finally {
+                db.endTransaction();
+            }
         } catch (Exception e) {
             Toast.makeText(this, "Error placing order: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
@@ -550,6 +682,24 @@ public class PaymentActivity extends AppCompatActivity {
     // Handle back button to return to product activity
     @Override
     public void onBackPressed() {
+        super.onBackPressed();
         finish(); // Just finish the activity, don't create a new instance
+    }
+
+    private String getPhoneIdByName(String phoneName) {
+        String phoneId = null;
+        Cursor cursor = repository.db.query(
+                "phones",
+                new String[]{"id"},
+                "phone_name = ?",
+                new String[]{phoneName},
+                null, null, null
+        );
+
+        if (cursor.moveToFirst()) {
+            phoneId = cursor.getString(cursor.getColumnIndexOrThrow("id"));
+        }
+        cursor.close();
+        return phoneId;
     }
 }

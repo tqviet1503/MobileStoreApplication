@@ -33,7 +33,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="10dp"
-                android:text="Brand Name"
+                android:text="Customer Management"
                 android:textColor="@color/white"
                 android:textSize="16sp" />
 
@@ -44,7 +44,7 @@
                 android:layout_marginLeft="10dp"
                 android:layout_marginTop="12dp"
                 android:textColor="@color/white"
-                android:text="Xiaomi"
+                android:text="Customer"
                 android:textSize="32dp"
                 android:textStyle="bold" />
 
@@ -61,7 +61,7 @@
     </androidx.cardview.widget.CardView>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view_phones"
+        android:id="@+id/recycler_view_customer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
