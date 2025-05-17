@@ -18,7 +18,7 @@ public class BillAdapter extends RecyclerView.Adapter<BillAdapter.ViewHolder> {
     private List<BillDetails> bills;
     private final OnBillClickListener listener;
 
-    public static interface OnBillClickListener {
+    public interface OnBillClickListener {
         void onBillClick(BillDetails bill);
     }
 

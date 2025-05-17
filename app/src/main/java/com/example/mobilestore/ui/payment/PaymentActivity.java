@@ -540,7 +540,7 @@ public class PaymentActivity extends AppCompatActivity {
 
             db.beginTransaction();
             try {
-                long customerId;
+                String customerId;
                 Cursor customerCursor = db.query("customers",
                         new String[]{"id"},
                         "name = ?",
@@ -549,7 +549,7 @@ public class PaymentActivity extends AppCompatActivity {
 
                 if (customerCursor.moveToFirst()) {
                     // update customer
-                    customerId = customerCursor.getLong(customerCursor.getColumnIndexOrThrow("id"));
+                    customerId = customerCursor.getString(customerCursor.getColumnIndexOrThrow("id"));
                     ContentValues customerValues = new ContentValues();
                     customerValues.put("address", address);
                     customerValues.put("updated_at", System.currentTimeMillis());
@@ -562,7 +562,7 @@ public class PaymentActivity extends AppCompatActivity {
                 } else {
                     // them customer neu chua co
                     ContentValues customerValues = new ContentValues();
-                    customerId = System.currentTimeMillis(); // Generate new ID
+                    customerId = String.valueOf(System.currentTimeMillis()); // Generate new ID
                     customerValues.put("id", customerId);
                     customerValues.put("name", name);
                     customerValues.put("phone", customerDataManager.getCustomerPhone()); // Add phone
@@ -574,10 +574,8 @@ public class PaymentActivity extends AppCompatActivity {
                     customerValues.put("created_at", System.currentTimeMillis());
                     customerValues.put("updated_at", System.currentTimeMillis());
 
-                    customerId = db.insert("customers", null, customerValues);
-                    if (customerId == -1) {
-                        throw new Exception("Failed to insert customer");
-                    }
+                    db.insert("customers", null, customerValues);
+
                 }
                 customerCursor.close();
                 Random random = new Random();
@@ -587,7 +585,10 @@ public class PaymentActivity extends AppCompatActivity {
                 billValues.put("id", billId);
                 billValues.put("customer_id", customerId);
                 billValues.put("total_amount", totalPrice);
-                db.insert("bills", null, billValues);
+                long result = db.insert("bills", null, billValues);
+                if (result == -1) {
+                    throw new Exception("Failed to insert bill");
+                }
 
                 // tao bill va luu bill vao database
                 ContentValues detailValues = new ContentValues();
@@ -595,7 +596,10 @@ public class PaymentActivity extends AppCompatActivity {
                 detailValues.put("phone_id", getPhoneIdByName(productName));
                 detailValues.put("quantity", quantity);
                 detailValues.put("unit_price", unitPrice);
-                db.insert("bill_details", null, detailValues);
+                result = db.insert("bill_details", null, detailValues);
+                if (result == -1) {
+                    throw new Exception("Failed to insert bill details");
+                }
 
                 //update profit
                 Cursor profitCursor = db.query("profit", null, null, null,

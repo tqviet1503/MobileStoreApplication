@@ -4,10 +4,13 @@ import android.app.AlertDialog;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -48,52 +51,77 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
 
     private void showBillDetailsDialog(BillDetails bill) {
         SQLiteDatabase db = repository.db;
-        // Lấy thông tin chi tiết của bill dựa trên bill.getBillId()
-        Cursor cursor = db.rawQuery(
-                "SELECT b.*, c.name as customer_name, c.phone as customer_phone, " +
-                        "c.address as customer_address, p.phone_name " +
-                        "FROM bills b " +
-                        "INNER JOIN customers c ON b.customer_id = c.id " +
-                        "INNER JOIN bill_details bd ON b.id = bd.bill_id " +
-                        "INNER JOIN phones p ON bd.phone_id = p.id " +
-                        "WHERE b.id = ?",
-                new String[]{String.valueOf(bill.getBillId())}
-        );
 
-        if (cursor.moveToFirst()) {
-            View dialogView = LayoutInflater.from(getContext())
-                    .inflate(R.layout.bill_details_dialog, null);
+        // Debug log
+        Log.d("BillDetails", "Showing dialog for bill_id: " + bill.getBillId());
 
-            TextView billIdText = dialogView.findViewById(R.id.text_bill_id);
-            TextView customerText = dialogView.findViewById(R.id.text_customer_info);
-            TextView phoneText = dialogView.findViewById(R.id.text_phone_info);
-            TextView quantityText = dialogView.findViewById(R.id.text_quantity);
-            TextView totalText = dialogView.findViewById(R.id.text_total_amount);
+        try {
+            Cursor cursor = db.rawQuery(
+                    "SELECT b.id, b.total_amount, b.created_at, " +
+                            "c.name as customer_name, c.phone as customer_phone, c.address as customer_address, " +
+                            "p.phone_name, bd.quantity, bd.unit_price " +
+                            "FROM bills b " +
+                            "INNER JOIN bill_details bd ON b.id = bd.bill_id " +
+                            "INNER JOIN customers c ON b.customer_id = c.id " +
+                            "INNER JOIN phones p ON bd.phone_id = p.id " +
+                            "WHERE b.id = ? AND bd.id = ?",
+                    new String[]{
+                            String.valueOf(bill.getBillId()),
+                            String.valueOf(bill.getId())
+                    }
+            );
 
-            billIdText.setText("Bill #" + bill.getBillId());
-            customerText.setText(String.format("Customer: %s\nPhone: %s\nAddress: %s",
-                    cursor.getString(cursor.getColumnIndexOrThrow("customer_name")),
-                    cursor.getString(cursor.getColumnIndexOrThrow("customer_phone")),
-                    cursor.getString(cursor.getColumnIndexOrThrow("customer_address"))
-            ));
-            phoneText.setText("Product: " + cursor.getString(cursor.getColumnIndexOrThrow("phone_name")));
-            quantityText.setText("Quantity: " + bill.getQuantity());
-            totalText.setText(String.format(Locale.getDefault(), "Total Price: %,.0fđ",
-                    cursor.getDouble(cursor.getColumnIndexOrThrow("total_amount"))));
+            if (cursor != null && cursor.moveToFirst()) {
+                // Debug log
+                Log.d("BillDetails", "Found bill data");
 
-            new AlertDialog.Builder(requireContext())
-                    .setView(dialogView)
-                    .setPositiveButton("Close", null)
-                    .show();
+                View dialogView = LayoutInflater.from(requireContext())
+                        .inflate(R.layout.bill_details_dialog, null);
+
+                TextView billIdText = dialogView.findViewById(R.id.text_bill_id);
+                TextView customerText = dialogView.findViewById(R.id.text_customer_info);
+                TextView phoneText = dialogView.findViewById(R.id.text_phone_info);
+                TextView quantityText = dialogView.findViewById(R.id.text_quantity);
+                TextView totalText = dialogView.findViewById(R.id.text_total_amount);
+
+                billIdText.setText("Bill #" + cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                customerText.setText(String.format("Customer: %s\nPhone: %s\nAddress: %s",
+                        cursor.getString(cursor.getColumnIndexOrThrow("customer_name")),
+                        cursor.getString(cursor.getColumnIndexOrThrow("customer_phone")),
+                        cursor.getString(cursor.getColumnIndexOrThrow("customer_address"))
+                ));
+                phoneText.setText("Product: " + cursor.getString(cursor.getColumnIndexOrThrow("phone_name")));
+                quantityText.setText("Quantity: " + cursor.getInt(cursor.getColumnIndexOrThrow("quantity")));
+                totalText.setText(String.format(Locale.getDefault(), "Total Price: %,.0fđ",
+                        cursor.getDouble(cursor.getColumnIndexOrThrow("total_amount"))));
+
+                new AlertDialog.Builder(requireContext())
+                        .setView(dialogView)
+                        .setPositiveButton("Close", null)
+                        .show();
+
+                cursor.close();
+            } else {
+                Log.e("BillDetails", "No data found for bill_id: " + bill.getBillId());
+                Toast.makeText(requireContext(),
+                        "Could not find bill details", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e("BillDetails", "Error showing dialog: " + e.getMessage());
+            Toast.makeText(requireContext(),
+                    "Error showing bill details", Toast.LENGTH_SHORT).show();
         }
-        cursor.close();
     }
 
     private List<BillDetails> getBillsFromDatabase() {
         List<BillDetails> bills = new ArrayList<>();
         SQLiteDatabase db = repository.db;
+
+        Log.d("BillList", "Querying bills from database");
+
         Cursor cursor = db.rawQuery(
-                "SELECT bd.*, b.id as bill_id, b.customer_id, b.total_amount, b.created_at " +
+                "SELECT DISTINCT b.id as bill_id, bd.id as detail_id, bd.quantity, " +
+                        "bd.unit_price, bd.phone_id, b.total_amount " +
                         "FROM bills b " +
                         "INNER JOIN bill_details bd ON b.id = bd.bill_id " +
                         "ORDER BY b.created_at DESC", null);
@@ -101,7 +129,12 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
         if (cursor.moveToFirst()) {
             do {
                 BillDetails bill = new BillDetails();
-                bill.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                int billId = cursor.getInt(cursor.getColumnIndexOrThrow("bill_id"));
+                int detailId = cursor.getInt(cursor.getColumnIndexOrThrow("detail_id"));
+
+                Log.d("BillList", "Found bill - Bill ID: " + billId + ", Detail ID: " + detailId);
+
+                bill.setId(cursor.getInt(cursor.getColumnIndexOrThrow("detail_id")));
                 bill.setBillId(cursor.getInt(cursor.getColumnIndexOrThrow("bill_id")));
                 bill.setPhoneId(cursor.getString(cursor.getColumnIndexOrThrow("phone_id")));
                 bill.setQuantity(cursor.getInt(cursor.getColumnIndexOrThrow("quantity")));
