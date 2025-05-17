@@ -6,7 +6,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class AppDatabase extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "mobile_store.db";
-    private static final int DATABASE_VERSION = 5;
+
+    private static final int DATABASE_VERSION = 7;
+
     private static AppDatabase instance;
 
     private AppDatabase(Context context) {
@@ -22,6 +24,12 @@ public class AppDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+        //Profit table
+        db.execSQL("CREATE TABLE profit (" +
+                        "total_sold INTEGER, " +
+                        "income INTEGER)"
+        );
+
         // Brands table
         db.execSQL(
                 "CREATE TABLE brands (" +
@@ -49,17 +57,23 @@ public class AppDatabase extends SQLiteOpenHelper {
         // Customers table
         db.execSQL(
                 "CREATE TABLE customers (" +
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                        "name TEXT NOT NULL," +
-                        "phone TEXT," +
-                        "email TEXT," +
-                        "address TEXT)"
+                    "id TEXT," +
+                    "name TEXT NOT NULL," +
+                    "phone TEXT NOT NULL," +  
+                    "email TEXT," +
+                    "address TEXT NOT NULL," + 
+                    "total_orders INTEGER DEFAULT 0," +
+                    "total_spent REAL DEFAULT 0.0," +   
+                    "loyalty_points INTEGER DEFAULT 0," + 
+                    "created_at DATETIME DEFAULT CURRENT_TIMESTAMP," + 
+                    "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP" + 
+                    ")"
         );
 
         // Bills table
         db.execSQL(
                 "CREATE TABLE bills (" +
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "id INTEGER PRIMARY KEY," +
                         "customer_id INTEGER," +
                         "total_amount REAL NOT NULL," +
                         "created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
@@ -69,7 +83,7 @@ public class AppDatabase extends SQLiteOpenHelper {
         // Bill details table
         db.execSQL(
                 "CREATE TABLE bill_details (" +
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "id INTEGER PRIMARY KEY," +
                         "bill_id INTEGER," +
                         "phone_id TEXT," +
                         "quantity INTEGER," +
@@ -86,7 +100,7 @@ public class AppDatabase extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS phones");
         db.execSQL("DROP TABLE IF EXISTS customers");
         db.execSQL("DROP TABLE IF EXISTS brands");
-
+        db.execSQL("DROP TABLE IF EXISTS profit");
         // Create new tables
         onCreate(db);
     }

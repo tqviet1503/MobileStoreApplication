@@ -75,7 +75,7 @@ public class BrandAdapter extends RecyclerView.Adapter<BrandAdapter.BrandViewHol
         public void bind(Brand brand, OnBrandClickListener listener) {
             logoImage.setImageResource(brand.getLogoResource());
             nameText.setText(brand.getName());
-            countText.setText(String.format("%d phones", brand.getPhoneCount()));
+            countText.setText(String.format("Quantity: %d", brand.getPhoneCount()));
 
             detailButton.setOnClickListener(v -> {
                 if (listener != null) {

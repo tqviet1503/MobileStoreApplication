@@ -1,5 +1,7 @@
 package com.example.mobilestore.ui.admin_report;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +20,8 @@ public class ReportFragment extends Fragment implements ProductRepository.OnData
     private ReportViewModel viewModel;
     private ProductRepository repository;
     private TextView categoryValueText;
+    private TextView totalSoldText;
+    private TextView monthlyIncomeText, totalProfitTileText;
     private TextView phoneCountText;
 
     @Override
@@ -39,6 +43,10 @@ public class ReportFragment extends Fragment implements ProductRepository.OnData
         // Initialize the TextView
         categoryValueText = view.findViewById(R.id.productCategoryValue);
         phoneCountText = view.findViewById(R.id.totalProductValue);
+        totalSoldText = view.findViewById(R.id.totalSoldValue);
+        monthlyIncomeText = view.findViewById(R.id.monthlyIncomeValue);
+        totalProfitTileText = view.findViewById(R.id.totalProfitTitle);
+
         // Update initial value
         updateValues();
     }
@@ -71,6 +79,28 @@ public class ReportFragment extends Fragment implements ProductRepository.OnData
                 int totalPhones = getTotalPhones();
                 phoneCountText.setText(String.valueOf(totalPhones));
             }
+
+            // update profit data o day
+            SQLiteDatabase db = repository.db;
+            Cursor cursor = db.query("profit", null, null, null,
+                    null, null, null);
+
+            if (cursor.moveToFirst()) {
+                if (totalSoldText != null) {
+                    int totalSold = cursor.getInt(
+                            cursor.getColumnIndexOrThrow("total_sold"));
+                    totalSoldText.setText(String.valueOf(totalSold));
+                }
+
+                if (monthlyIncomeText != null) {
+                    double income = cursor.getDouble(
+                            cursor.getColumnIndexOrThrow("income"));
+                    String formattedIncome = String.format("%,.0f", income);
+                    monthlyIncomeText.setText(income/1000000 + "M đ");
+                    totalProfitTileText.setText("VND " + formattedIncome);
+                }
+            }
+            cursor.close();
         });
     }
 
