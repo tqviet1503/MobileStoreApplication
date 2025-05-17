@@ -177,15 +177,20 @@ public class ProfileActivity extends AppCompatActivity {
             // View orders button
             if (viewOrdersButton != null) {
                 viewOrdersButton.setOnClickListener(view -> {
-                    // In a real app, this would navigate to an orders history screen
-                    Toast.makeText(ProfileActivity.this, "Viewing orders history", Toast.LENGTH_SHORT).show();
+                    // OrderHistoryActivity
+                    try {
+                        Intent intent = new Intent(ProfileActivity.this, com.example.mobilestore.ui.order.OrderHistoryActivity.class);
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        Toast.makeText(ProfileActivity.this, "Error opening order history: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
                 });
             }
 
             // Contact admin button
             if (contactCustomerButton != null) {
                 contactCustomerButton.setOnClickListener(view -> {
-                    // Mở ứng dụng email với địa chỉ admin@gmail.com
                     Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
                     emailIntent.setData(Uri.parse("mailto:admin@gmail.com"));
                     emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Contact from Mobile Store App");

@@ -18,6 +18,7 @@ import com.example.mobilestore.data.customer.CustomerDataManager;
 import com.example.mobilestore.model.Phone;
 import com.example.mobilestore.model.Brand;
 import com.example.mobilestore.ui.customer_profile.ProfileActivity;
+import com.example.mobilestore.model.Order;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -481,15 +482,26 @@ public class PaymentActivity extends AppCompatActivity {
             String address = edtAddress.getText().toString().trim();
             String notes = edtNotes.getText().toString().trim();
 
-            // Cập nhật thông tin khách hàng vào CustomerDataManager
+            // Tạo đối tượng Order mới
+            Order newOrder = new Order(
+                    productName,
+                    quantity,
+                    unitPrice,
+                    totalPrice,
+                    isDiscountApplied,
+                    name,
+                    address,
+                    notes
+            );
+
+            // Lưu đơn hàng vào CustomerDataManager
             if (customerDataManager != null) {
+                customerDataManager.saveOrder(newOrder);
+
                 // Cập nhật địa chỉ nếu đã thay đổi
                 if (!address.equals(customerDataManager.getCustomerAddress())) {
                     customerDataManager.setCustomerAddress(address);
                 }
-
-                // Cập nhật thông tin mua hàng
-                customerDataManager.processNewOrder(totalPrice);
             }
 
             // Hiển thị hộp thoại xác nhận với thông tin đơn hàng đã cập nhật

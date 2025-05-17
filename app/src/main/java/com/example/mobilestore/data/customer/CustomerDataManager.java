@@ -2,6 +2,18 @@ package com.example.mobilestore.data.customer;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
+
+import com.example.mobilestore.model.Order;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
 
 /**
  * Lớp quản lý dữ liệu khách hàng và thông tin mua hàng
@@ -18,14 +30,17 @@ public class CustomerDataManager {
     private static final String KEY_TOTAL_ORDERS = "total_orders";
     private static final String KEY_TOTAL_SPENT = "total_spent";
     private static final String KEY_LOYALTY_POINTS = "loyalty_points";
+    private static final String KEY_ORDERS_LIST = "orders_list";
 
     private static CustomerDataManager instance;
     private final SharedPreferences prefs;
+    private List<Order> ordersList;
 
     // Singleton pattern
     private CustomerDataManager(Context context) {
         prefs = context.getApplicationContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         initDefaultDataIfNeeded();
+        loadOrdersList();
     }
 
     public static synchronized CustomerDataManager getInstance(Context context) {
@@ -127,5 +142,75 @@ public class CustomerDataManager {
     public String getFormattedTotalSpent() {
         double totalSpent = getTotalSpent();
         return String.format("%,.0fđ", totalSpent);
+    }
+
+    // Lưu đơn hàng mới
+    public void saveOrder(Order order) {
+        if (ordersList == null) {
+            ordersList = new ArrayList<>();
+        }
+
+        ordersList.add(order);
+        saveOrdersList();
+
+        // Cập nhật tổng tiền và số lượng đơn hàng
+        processNewOrder(order.getTotalPrice());
+    }
+
+    // Lấy danh sách đơn hàng
+    public List<Order> getOrdersList() {
+        if (ordersList == null) {
+            loadOrdersList();
+        }
+        return ordersList;
+    }
+
+    // Lưu danh sách đơn hàng vào SharedPreferences
+    private void saveOrdersList() {
+        try {
+            SharedPreferences.Editor editor = prefs.edit();
+
+            if (ordersList == null || ordersList.isEmpty()) {
+                editor.remove(KEY_ORDERS_LIST);
+                editor.apply();
+                return;
+            }
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(ordersList);
+            oos.close();
+
+            String serializedList = android.util.Base64.encodeToString(baos.toByteArray(), android.util.Base64.DEFAULT);
+            editor.putString(KEY_ORDERS_LIST, serializedList);
+            editor.apply();
+        } catch (IOException e) {
+            Log.e("CustomerDataManager", "Error saving orders list: " + e.getMessage());
+        }
+    }
+
+    // Tải danh sách đơn hàng từ SharedPreferences
+    @SuppressWarnings("unchecked")
+    private void loadOrdersList() {
+        try {
+            String serializedList = prefs.getString(KEY_ORDERS_LIST, null);
+
+            if (serializedList == null) {
+                ordersList = new ArrayList<>();
+                return;
+            }
+
+            byte[] data = android.util.Base64.decode(serializedList, android.util.Base64.DEFAULT);
+            ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
+            ordersList = (List<Order>) ois.readObject();
+            ois.close();
+
+            if (ordersList == null) {
+                ordersList = new ArrayList<>();
+            }
+        } catch (Exception e) {
+            Log.e("CustomerDataManager", "Error loading orders list: " + e.getMessage());
+            ordersList = new ArrayList<>();
+        }
     }
 }
