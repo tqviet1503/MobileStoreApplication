@@ -2,6 +2,7 @@ package com.example.mobilestore.ui.customer_profile;
 
 import android.content.Intent;
 import android.content.res.Resources;
+import android.net.Uri; // Thêm import Uri
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -12,6 +13,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.mobilestore.R;
+import com.example.mobilestore.data.customer.CustomerDataManager;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -24,8 +26,8 @@ public class ProfileActivity extends AppCompatActivity {
     private ImageButton editPhoneButton, editEmailButton, editAddressButton;
     private Button viewOrdersButton, contactCustomerButton;
 
-    // Customer data
-    private Customer customer;
+    // Customer data manager
+    private CustomerDataManager customerDataManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,11 +35,11 @@ public class ProfileActivity extends AppCompatActivity {
         try {
             setContentView(R.layout.activity_profile);
 
+            // Khởi tạo CustomerDataManager
+            customerDataManager = CustomerDataManager.getInstance(this);
+
             // Initialize views
             initializeViews();
-
-            // Load customer data
-            loadCustomerData();
 
             // Update UI with customer data
             updateUI();
@@ -50,6 +52,12 @@ public class ProfileActivity extends AppCompatActivity {
         } catch (Exception e) {
             Toast.makeText(this, "Error initializing profile screen: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateUI();
     }
 
     private void initializeViews() {
@@ -77,38 +85,6 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    private void loadCustomerData() {
-        try {
-            // In a real app, this would load data from a database or shared preferences
-            // For this example, we create a sample customer
-            customer = new Customer(
-                    "John Doe",
-                    "#12345",
-                    "Active Customer",
-                    "+1 234 567 8900",
-                    "john.doe@example.com",
-                    "123 Main Street, City, Country",
-                    12,
-                    "$1,234",
-                    250
-            );
-        } catch (Exception e) {
-            Toast.makeText(this, "Error loading customer data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            // Create a default customer if loading fails
-            customer = new Customer(
-                    "Default User",
-                    "#00000",
-                    "Customer",
-                    "+1 000 000 0000",
-                    "default@example.com",
-                    "Default Address",
-                    0,
-                    "$0",
-                    0
-            );
-        }
-    }
-
     private void updateUI() {
         try {
             // Set customer photo
@@ -121,44 +97,42 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             }
 
-            // Safely set customer details with null checks
-            if (customer != null) {
-                if (customerNameTextView != null) {
-                    customerNameTextView.setText(customer.getName());
-                }
+            // Lấy thông tin khách hàng từ CustomerDataManager
+            if (customerNameTextView != null) {
+                customerNameTextView.setText(customerDataManager.getCustomerName());
+            }
 
-                if (customerIdTextView != null) {
-                    customerIdTextView.setText("ID: " + customer.getId());
-                }
+            if (customerIdTextView != null) {
+                customerIdTextView.setText("ID: " + customerDataManager.getCustomerId());
+            }
 
-                if (customerStatusTextView != null) {
-                    customerStatusTextView.setText(customer.getStatus());
-                }
+            if (customerStatusTextView != null) {
+                customerStatusTextView.setText(customerDataManager.getCustomerStatus());
+            }
 
-                if (customerPhoneTextView != null) {
-                    customerPhoneTextView.setText(customer.getPhone());
-                }
+            if (customerPhoneTextView != null) {
+                customerPhoneTextView.setText(customerDataManager.getCustomerPhone());
+            }
 
-                if (customerEmailTextView != null) {
-                    customerEmailTextView.setText(customer.getEmail());
-                }
+            if (customerEmailTextView != null) {
+                customerEmailTextView.setText(customerDataManager.getCustomerEmail());
+            }
 
-                if (customerAddressTextView != null) {
-                    customerAddressTextView.setText(customer.getAddress());
-                }
+            if (customerAddressTextView != null) {
+                customerAddressTextView.setText(customerDataManager.getCustomerAddress());
+            }
 
-                // Set purchase statistics
-                if (totalOrdersTextView != null) {
-                    totalOrdersTextView.setText(String.valueOf(customer.getTotalOrders()));
-                }
+            // Hiển thị thông tin mua hàng
+            if (totalOrdersTextView != null) {
+                totalOrdersTextView.setText(String.valueOf(customerDataManager.getTotalOrders()));
+            }
 
-                if (totalSpentTextView != null) {
-                    totalSpentTextView.setText(customer.getTotalSpent());
-                }
+            if (totalSpentTextView != null) {
+                totalSpentTextView.setText(customerDataManager.getFormattedTotalSpent());
+            }
 
-                if (loyaltyPointsTextView != null) {
-                    loyaltyPointsTextView.setText(String.valueOf(customer.getLoyaltyPoints()));
-                }
+            if (loyaltyPointsTextView != null) {
+                loyaltyPointsTextView.setText(String.valueOf(customerDataManager.getLoyaltyPoints()));
             }
         } catch (Exception e) {
             Toast.makeText(this, "Error updating profile UI: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -170,11 +144,9 @@ public class ProfileActivity extends AppCompatActivity {
             // Edit phone button
             if (editPhoneButton != null) {
                 editPhoneButton.setOnClickListener(view -> {
-                    showEditDialog("Phone Number", customer.getPhone(), phone -> {
-                        customer.setPhone(phone);
-                        if (customerPhoneTextView != null) {
-                            customerPhoneTextView.setText(phone);
-                        }
+                    showEditDialog("Phone Number", customerDataManager.getCustomerPhone(), phone -> {
+                        customerDataManager.setCustomerPhone(phone);
+                        customerPhoneTextView.setText(phone);
                         Toast.makeText(ProfileActivity.this, "Phone number updated", Toast.LENGTH_SHORT).show();
                     });
                 });
@@ -183,11 +155,9 @@ public class ProfileActivity extends AppCompatActivity {
             // Edit email button
             if (editEmailButton != null) {
                 editEmailButton.setOnClickListener(view -> {
-                    showEditDialog("Email", customer.getEmail(), email -> {
-                        customer.setEmail(email);
-                        if (customerEmailTextView != null) {
-                            customerEmailTextView.setText(email);
-                        }
+                    showEditDialog("Email", customerDataManager.getCustomerEmail(), email -> {
+                        customerDataManager.setCustomerEmail(email);
+                        customerEmailTextView.setText(email);
                         Toast.makeText(ProfileActivity.this, "Email updated", Toast.LENGTH_SHORT).show();
                     });
                 });
@@ -196,11 +166,9 @@ public class ProfileActivity extends AppCompatActivity {
             // Edit address button
             if (editAddressButton != null) {
                 editAddressButton.setOnClickListener(view -> {
-                    showEditDialog("Address", customer.getAddress(), address -> {
-                        customer.setAddress(address);
-                        if (customerAddressTextView != null) {
-                            customerAddressTextView.setText(address);
-                        }
+                    showEditDialog("Address", customerDataManager.getCustomerAddress(), address -> {
+                        customerDataManager.setCustomerAddress(address);
+                        customerAddressTextView.setText(address);
                         Toast.makeText(ProfileActivity.this, "Address updated", Toast.LENGTH_SHORT).show();
                     });
                 });
@@ -214,11 +182,19 @@ public class ProfileActivity extends AppCompatActivity {
                 });
             }
 
-            // Contact customer button
+            // Contact admin button
             if (contactCustomerButton != null) {
                 contactCustomerButton.setOnClickListener(view -> {
-                    // In a real app, this would open communication options
-                    Toast.makeText(ProfileActivity.this, "Contact options would be shown here", Toast.LENGTH_SHORT).show();
+                    // Mở ứng dụng email với địa chỉ admin@gmail.com
+                    Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
+                    emailIntent.setData(Uri.parse("mailto:admin@gmail.com"));
+                    emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Contact from Mobile Store App");
+
+                    try {
+                        startActivity(Intent.createChooser(emailIntent, "Send email using..."));
+                    } catch (android.content.ActivityNotFoundException ex) {
+                        Toast.makeText(ProfileActivity.this, "No email clients installed", Toast.LENGTH_SHORT).show();
+                    }
                 });
             }
         } catch (Exception e) {
@@ -258,81 +234,5 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         finish(); // Just finish activity instead of creating a new one
-    }
-
-    // Customer model class
-    public static class Customer {
-        private String name;
-        private String id;
-        private String status;
-        private String phone;
-        private String email;
-        private String address;
-        private int totalOrders;
-        private String totalSpent;
-        private int loyaltyPoints;
-
-        public Customer(String name, String id, String status, String phone, String email,
-                        String address, int totalOrders, String totalSpent, int loyaltyPoints) {
-            this.name = name;
-            this.id = id;
-            this.status = status;
-            this.phone = phone;
-            this.email = email;
-            this.address = address;
-            this.totalOrders = totalOrders;
-            this.totalSpent = totalSpent;
-            this.loyaltyPoints = loyaltyPoints;
-        }
-
-        // Getters
-        public String getName() {
-            return name != null ? name : "";
-        }
-
-        public String getId() {
-            return id != null ? id : "";
-        }
-
-        public String getStatus() {
-            return status != null ? status : "";
-        }
-
-        public String getPhone() {
-            return phone != null ? phone : "";
-        }
-
-        public String getEmail() {
-            return email != null ? email : "";
-        }
-
-        public String getAddress() {
-            return address != null ? address : "";
-        }
-
-        public int getTotalOrders() {
-            return totalOrders;
-        }
-
-        public String getTotalSpent() {
-            return totalSpent != null ? totalSpent : "$0";
-        }
-
-        public int getLoyaltyPoints() {
-            return loyaltyPoints;
-        }
-
-        // Setters
-        public void setPhone(String phone) {
-            this.phone = phone;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public void setAddress(String address) {
-            this.address = address;
-        }
     }
 }

@@ -72,7 +72,7 @@ public class ProductRepository {
             phoneValues.put("model", phone.getModel());
             phoneValues.put("brand", brandName);
             phoneValues.put("price", phone.getPrice());
-            phoneValues.put("battery", phone.getPerformance().getBatteryCapacity()); 
+            phoneValues.put("battery", phone.getPerformance().getBatteryCapacity());
             phoneValues.put("phone_name", phone.getPhoneName());
             phoneValues.put("processor", phone.getPerformance().getProcessor());
             phoneValues.put("ram_gb", phone.getPerformance().getRamGB());

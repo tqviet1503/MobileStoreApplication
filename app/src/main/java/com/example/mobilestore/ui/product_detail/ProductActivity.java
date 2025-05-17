@@ -13,8 +13,16 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import android.widget.RelativeLayout;
+
 import com.example.mobilestore.R;
+import com.example.mobilestore.data.repository.ProductRepository;
+import com.example.mobilestore.model.Brand;
+import com.example.mobilestore.model.Phone;
 import com.example.mobilestore.ui.shopping.ShoppingActivity;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 public class ProductActivity extends AppCompatActivity {
 
@@ -29,14 +37,20 @@ public class ProductActivity extends AppCompatActivity {
 
     // Data
     private Product selectedProduct;
+    private Phone selectedPhone;
+    private ProductRepository repository;
     private int quantity = 1;
     private boolean productSelected = false;
+    private double basePrice = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         try {
             setContentView(R.layout.product_detail);
+
+            // Initialize repository
+            repository = ProductRepository.getInstance(this);
 
             // Initialize views
             initializeViews();
@@ -49,7 +63,7 @@ public class ProductActivity extends AppCompatActivity {
 
         } catch (Resources.NotFoundException e) {
             Toast.makeText(this, "Layout not found: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            finish(); // Close activity if layout not found
+            finish();
         } catch (Exception e) {
             Toast.makeText(this, "Error initializing product screen: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
@@ -109,42 +123,60 @@ public class ProductActivity extends AppCompatActivity {
             if (intent != null && intent.hasExtra("PRODUCT_NAME") && intent.hasExtra("PRODUCT_PRICE")) {
                 String name = intent.getStringExtra("PRODUCT_NAME");
                 String price = intent.getStringExtra("PRODUCT_PRICE");
-                String specs = intent.getStringExtra("PRODUCT_SPECS");
                 boolean fromCart = intent.getBooleanExtra("FROM_CART", false);
 
-                // Nếu không có specs, tạo specs dựa trên tên sản phẩm
-                if (specs == null) {
-                    // Infer specs based on product name
-                    if (name.contains("iPhone")) {
-                        specs = "256GB, Deep Purple";
-                    } else if (name.contains("Samsung")) {
-                        specs = "512GB, Phantom Black";
-                    } else if (name.contains("Xiaomi")) {
-                        specs = "256GB, Ceramic White";
-                    } else if (name.contains("Oppo")) {
-                        specs = "256GB, Ocean Blue";
-                    } else {
-                        specs = "Standard Configuration";
+                // Extract base price from formatted price string
+                basePrice = extractPrice(price);
+
+                // Find the actual Phone object from repository based on name
+                selectedPhone = findPhoneByName(name);
+
+                if (selectedPhone != null) {
+                    // Use actual phone data from repository
+                    String specs = generateSpecsFromPhone(selectedPhone);
+
+                    // If no basePrice was extracted from the formatted price string,
+                    // use the price from the Phone object
+                    if (basePrice <= 0) {
+                        basePrice = selectedPhone.getPrice();
                     }
-                }
 
-                // Create product with valid data
-                selectedProduct = new Product(
-                        name != null ? name : "Unknown Product",
-                        price != null ? price : "$0",
-                        specs);
+                    // Create product with data from repository
+                    selectedProduct = new Product(
+                            selectedPhone.getPhoneName(),
+                            formatPrice(basePrice),
+                            specs);
 
-                productSelected = true;
+                    productSelected = true;
 
-                // Show product view, hide no product message
-                showProductDetails();
+                    // Show product view, hide no product message
+                    showProductDetails();
 
-                // Update UI with product data
-                updateProductUI();
+                    // Update UI with product data
+                    updateProductUI();
 
-                // Kiểm tra nếu đến từ nút Add to Cart và hiển thị thông báo phù hợp
-                if (fromCart) {
-                    Toast.makeText(this, "Product has been added to your cart", Toast.LENGTH_SHORT).show();
+                    // Check if coming from Add to Cart and display appropriate message
+                    if (fromCart) {
+                        Toast.makeText(this, "Product has been added to your cart", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // No product found in repository - create a simple product with given name and price
+                    StringBuilder basicSpecs = new StringBuilder();
+                    basicSpecs.append("PRODUCT: ").append(name).append("\n\n");
+                    basicSpecs.append("Information not available in database.\n");
+                    basicSpecs.append("Please contact administrator.");
+
+                    selectedProduct = new Product(
+                            name != null ? name : "Unknown Product",
+                            price != null ? price : "0đ",
+                            basicSpecs.toString());
+
+                    productSelected = true;
+                    showProductDetails();
+                    updateProductUI();
+
+                    // Show a toast to notify admin
+                    Toast.makeText(this, "Warning: Product not found in database", Toast.LENGTH_SHORT).show();
                 }
             } else {
                 // No product selected - show message
@@ -158,12 +190,126 @@ public class ProductActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Extract numeric price from a formatted price string
+     * Handles various formats like "1,500,000đ", "$1,500", etc.
+     */
+    private double extractPrice(String formattedPrice) {
+        if (formattedPrice == null || formattedPrice.isEmpty()) {
+            return 0;
+        }
+
+        try {
+            // Remove all non-numeric characters except decimal point
+            String numericString = formattedPrice.replaceAll("[^0-9.]", "");
+            return Double.parseDouble(numericString);
+        } catch (NumberFormatException e) {
+            // If parsing fails, return 0
+            return 0;
+        }
+    }
+
+    /**
+     * Format price according to Vietnamese currency format
+     */
+    private String formatPrice(double price) {
+        return String.format(Locale.getDefault(), "%,.0fđ", price);
+    }
+
+    /**
+     * Find a phone in the repository by its name with improved search
+     */
+    private Phone findPhoneByName(String phoneName) {
+        if (phoneName == null || repository == null) return null;
+
+        // Get all brands
+        List<String> brandNames = new ArrayList<>();
+        for (Brand brand : repository.getAllBrands()) {
+            brandNames.add(brand.getName());
+        }
+
+        // Strategy 1: Direct match by name
+        for (String brandName : brandNames) {
+            List<Phone> phones = repository.getPhonesForBrand(brandName);
+            for (Phone phone : phones) {
+                if (phoneName.equals(phone.getPhoneName())) {
+                    return phone;
+                }
+            }
+        }
+
+        // Strategy 2: Case-insensitive match
+        String phoneNameLower = phoneName.toLowerCase();
+        for (String brandName : brandNames) {
+            List<Phone> phones = repository.getPhonesForBrand(brandName);
+            for (Phone phone : phones) {
+                if (phoneNameLower.equals(phone.getPhoneName().toLowerCase())) {
+                    return phone;
+                }
+            }
+        }
+
+        // Strategy 3: Partial match
+        for (String brandName : brandNames) {
+            List<Phone> phones = repository.getPhonesForBrand(brandName);
+            for (Phone phone : phones) {
+                if (phoneNameLower.contains(phone.getPhoneName().toLowerCase()) ||
+                        phone.getPhoneName().toLowerCase().contains(phoneNameLower)) {
+                    return phone;
+                }
+            }
+        }
+
+        // Strategy 4: Brand-based match
+        for (String brandName : brandNames) {
+            if (phoneNameLower.contains(brandName.toLowerCase())) {
+                List<Phone> phones = repository.getPhonesForBrand(brandName);
+                if (!phones.isEmpty()) {
+                    return phones.get(0);
+                }
+            }
+        }
+
+        // All strategies failed, return null
+        return null;
+    }
+
+    /**
+     * Generate detailed specifications string from Phone object
+     * With phone name displayed prominently at the top
+     */
+    private String generateSpecsFromPhone(Phone phone) {
+        StringBuilder specs = new StringBuilder();
+
+        // Add model and brand info
+        specs.append("PRODUCT DETAILS: ").append("\n");
+        specs.append("  • Model: ").append(phone.getModel()).append("\n");
+        specs.append("  • Brand: ").append(phone.getBrand()).append("\n");
+        Phone.PhonePerformance performance = phone.getPerformance();
+        if (performance != null) {
+            specs.append("  • Processor: ").append(performance.getProcessor()).append("\n");
+            specs.append("  • RAM: ").append(performance.getRamGB()).append("GB\n");
+            specs.append("  • Storage: ").append(performance.getStorageGB()).append("GB\n");
+            specs.append("  • Battery: ").append(performance.getBatteryCapacity()).append("\n");
+        }
+
+        // Add stock info
+        specs.append("  • Stock Available: ").append(phone.getStockQuantity()).append(" units");
+
+        return specs.toString();
+    }
+
     private void updateProductUI() {
         if (selectedProduct == null) return;
 
+        // Update product title in the screen header
+        if (titleTextView != null) {
+            titleTextView.setText(selectedProduct.getName());
+        }
+
         // Update product details
         if (txtProductDetails != null) {
-            txtProductDetails.setText("Product: " + selectedProduct.getName() + "\n" + selectedProduct.getSpecs());
+            txtProductDetails.setText(selectedProduct.getSpecs());
         }
 
         if (txtProductPrice != null) {
@@ -173,13 +319,18 @@ public class ProductActivity extends AppCompatActivity {
         // Update product image if available
         if (imgProduct != null) {
             try {
-                // Show image based on product name
-                if (selectedProduct.getName().contains("iPhone")) {
+                // Show image based on brand info from specs
+                String specs = selectedProduct.getSpecs().toLowerCase();
+                if (specs.contains("brand: apple") || specs.contains("iphone")) {
                     imgProduct.setImageResource(R.drawable.phone_sample);
-                } else if (selectedProduct.getName().contains("Samsung")) {
-                    imgProduct.setImageResource(R.drawable.phone_sample);
+                } else if (specs.contains("brand: samsung") || specs.contains("galaxy")) {
+                    imgProduct.setImageResource(R.drawable.samsung);
+                } else if (specs.contains("brand: redmi")) {
+                    imgProduct.setImageResource(R.drawable.redmi);
+                } else if (specs.contains("brand: oppo")) {
+                    imgProduct.setImageResource(R.drawable.oppo);
                 } else {
-                    imgProduct.setImageResource(R.drawable.phone_sample);
+                    imgProduct.setImageResource(R.drawable.default_phone);
                 }
 
                 // Hide placeholder, show image
@@ -221,12 +372,12 @@ public class ProductActivity extends AppCompatActivity {
     private void navigateToShoppingScreen() {
         try {
             Intent intent = new Intent(ProductActivity.this, ShoppingActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP); // Clear back stack
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);
             finish();
         } catch (Exception e) {
             Toast.makeText(this, "Error navigating to products: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            finish(); // Just finish this activity if navigation fails
+            finish();
         }
     }
 
@@ -268,19 +419,19 @@ public class ProductActivity extends AppCompatActivity {
     private void updateProductTotalPrice() {
         try {
             if (txtProductPrice != null && selectedProduct != null) {
-                // Parse the price (removing the $ sign and commas)
-                String priceStr = selectedProduct.getPrice().replace("$", "").replace(",", "");
-                try {
-                    double basePrice = Double.parseDouble(priceStr);
-                    double totalPrice = basePrice * quantity;
+                // Calculate total price
+                double totalPrice = basePrice * quantity;
 
-                    // Format total price
-                    String formattedPrice = String.format("$%,.0f", totalPrice);
-                    txtProductPrice.setText("Price: " + formattedPrice);
-                } catch (NumberFormatException e) {
-                    // If parsing fails, just show the original price
-                    txtProductPrice.setText("Price: " + selectedProduct.getPrice());
-                }
+                // Format and display total price
+                String formattedPrice = formatPrice(totalPrice);
+                txtProductPrice.setText("Price: " + formattedPrice);
+
+                // Also update the price in the product object
+                selectedProduct = new Product(
+                        selectedProduct.getName(),
+                        formattedPrice,
+                        selectedProduct.getSpecs()
+                );
             }
         } catch (Exception e) {
             Toast.makeText(this, "Error updating price: " + e.getMessage(), Toast.LENGTH_SHORT).show();
