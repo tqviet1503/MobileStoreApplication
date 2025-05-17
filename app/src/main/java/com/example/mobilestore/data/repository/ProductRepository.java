@@ -14,12 +14,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProductRepository {
-    private static final String TAG = "ProductRepository";
+//    private static final String TAG = "ProductRepository";
     private static ProductRepository instance;
     private final AppDatabase database;
     private final List<OnDataChangeListener> listeners;
-    private SQLiteDatabase db;
-    private final PhoneDAO phoneDAO;
+    public SQLiteDatabase db;
+//    private final PhoneDAO phoneDAO;
 
     public interface OnDataChangeListener {
         void onBrandAdded(Brand brand);
@@ -30,7 +30,7 @@ public class ProductRepository {
         database = AppDatabase.getInstance(context);
         listeners = new ArrayList<>();
         db = database.getWritableDatabase();
-        phoneDAO = new PhoneDAO(database);
+//        phoneDAO = new PhoneDAO(database);
     }
 
     public static ProductRepository getInstance(Context context) {
@@ -158,11 +158,11 @@ public class ProductRepository {
         }
     }
 
-    /**
-     * Tìm điện thoại theo tên
-     * @param phoneName tên điện thoại cần tìm
-     * @return đối tượng Phone nếu tìm thấy, null nếu không tìm thấy
-     */
+//    /**
+//     * Tìm điện thoại theo tên
+//     * @param phoneName tên điện thoại cần tìm
+//     * @return đối tượng Phone nếu tìm thấy, null nếu không tìm thấy
+//     */
     public Phone findPhoneByName(String phoneName) {
         if (phoneName == null) return null;
 
@@ -222,88 +222,88 @@ public class ProductRepository {
 
         return null;
     }
-
-    /**
-     * Kiểm tra xem có đủ tồn kho cho đơn hàng không
-     * @param phoneIdentifier ID hoặc tên điện thoại
-     * @param quantityNeeded số lượng cần đặt
-     * @return true nếu đủ hàng, false nếu không đủ
-     */
-    public boolean hasEnoughStock(String phoneIdentifier, int quantityNeeded) {
-        Log.d(TAG, "Checking stock for: " + phoneIdentifier + ", needed: " + quantityNeeded);
-
-        // Tìm điện thoại trong repository
-        Phone phone = findPhoneByName(phoneIdentifier);
-
-        // Nếu tìm thấy trong repository, kiểm tra tồn kho
-        if (phone != null) {
-            boolean hasEnough = phone.getStockQuantity() >= quantityNeeded;
-            Log.d(TAG, "Found in repository, stock: " + phone.getStockQuantity() +
-                    ", has enough: " + hasEnough);
-            return hasEnough;
-        } else {
-            // Nếu không tìm thấy trong repository, kiểm tra trong database
-            boolean hasEnough = phoneDAO.hasEnoughStock(phoneIdentifier, quantityNeeded);
-            Log.d(TAG, "Checking in database, has enough: " + hasEnough);
-            return hasEnough;
-        }
-    }
-
-    /**
-     * Lấy số lượng tồn kho hiện tại của điện thoại
-     * @param phoneIdentifier ID hoặc tên điện thoại
-     * @return số lượng tồn kho, -1 nếu không tìm thấy
-     */
-    public int getPhoneStock(String phoneIdentifier) {
-        // Tìm điện thoại trong repository
-        Phone phone = findPhoneByName(phoneIdentifier);
-
-        if (phone != null) {
-            Log.d(TAG, "Found stock in repository: " + phone.getStockQuantity());
-            return phone.getStockQuantity();
-        } else {
-            // Nếu không tìm thấy trong repository, truy vấn từ database
-            int stock = phoneDAO.getPhoneStock(phoneIdentifier);
-            Log.d(TAG, "Found stock in database: " + stock);
-            return stock;
-        }
-    }
-
-    /**
-     * Giảm số lượng tồn kho sau khi đặt hàng
-     * @param phoneIdentifier ID hoặc tên điện thoại
-     * @param quantityToDecrease số lượng cần giảm
-     * @return true nếu thành công, false nếu thất bại
-     */
-    public boolean decreaseStock(String phoneIdentifier, int quantityToDecrease) {
-        Log.d(TAG, "Decreasing stock for: " + phoneIdentifier + " by " + quantityToDecrease);
-
-        boolean success = false;
-
-        // Tìm điện thoại trong repository để cập nhật trong bộ nhớ
-        Phone phone = findPhoneByName(phoneIdentifier);
-
-        // Nếu tìm thấy trong repository, cập nhật cả trong bộ nhớ
-        if (phone != null) {
-            if (phone.getStockQuantity() >= quantityToDecrease) {
-                // Cập nhật trong bộ nhớ
-                phone.setStockQuantity(phone.getStockQuantity() - quantityToDecrease);
-
-                // Cập nhật trong database
-                success = phoneDAO.decreasePhoneStock(phone.getId(), quantityToDecrease);
-                Log.d(TAG, "Updated in memory and database, new stock: " + phone.getStockQuantity() +
-                        ", database update success: " + success);
-            } else {
-                Log.d(TAG, "Not enough stock in repository: " + phone.getStockQuantity() +
-                        " available, " + quantityToDecrease + " needed");
-                success = false;
-            }
-        } else {
-            // Nếu không tìm thấy trong repository, chỉ cập nhật database
-            success = phoneDAO.decreasePhoneStock(phoneIdentifier, quantityToDecrease);
-            Log.d(TAG, "Updated only in database, success: " + success);
-        }
-
-        return success;
-    }
+//
+//    /**
+//     * Kiểm tra xem có đủ tồn kho cho đơn hàng không
+//     * @param phoneIdentifier ID hoặc tên điện thoại
+//     * @param quantityNeeded số lượng cần đặt
+//     * @return true nếu đủ hàng, false nếu không đủ
+//     */
+//    public boolean hasEnoughStock(String phoneIdentifier, int quantityNeeded) {
+//        Log.d(TAG, "Checking stock for: " + phoneIdentifier + ", needed: " + quantityNeeded);
+//
+//        // Tìm điện thoại trong repository
+//        Phone phone = findPhoneByName(phoneIdentifier);
+//
+//        // Nếu tìm thấy trong repository, kiểm tra tồn kho
+//        if (phone != null) {
+//            boolean hasEnough = phone.getStockQuantity() >= quantityNeeded;
+//            Log.d(TAG, "Found in repository, stock: " + phone.getStockQuantity() +
+//                    ", has enough: " + hasEnough);
+//            return hasEnough;
+//        } else {
+//            // Nếu không tìm thấy trong repository, kiểm tra trong database
+//            boolean hasEnough = phoneDAO.hasEnoughStock(phoneIdentifier, quantityNeeded);
+//            Log.d(TAG, "Checking in database, has enough: " + hasEnough);
+//            return hasEnough;
+//        }
+//    }
+//
+//    /**
+//     * Lấy số lượng tồn kho hiện tại của điện thoại
+//     * @param phoneIdentifier ID hoặc tên điện thoại
+//     * @return số lượng tồn kho, -1 nếu không tìm thấy
+//     */
+//    public int getPhoneStock(String phoneIdentifier) {
+//        // Tìm điện thoại trong repository
+//        Phone phone = findPhoneByName(phoneIdentifier);
+//
+//        if (phone != null) {
+//            Log.d(TAG, "Found stock in repository: " + phone.getStockQuantity());
+//            return phone.getStockQuantity();
+//        } else {
+//            // Nếu không tìm thấy trong repository, truy vấn từ database
+//            int stock = phoneDAO.getPhoneStock(phoneIdentifier);
+//            Log.d(TAG, "Found stock in database: " + stock);
+//            return stock;
+//        }
+//    }
+//
+//    /**
+//     * Giảm số lượng tồn kho sau khi đặt hàng
+//     * @param phoneIdentifier ID hoặc tên điện thoại
+//     * @param quantityToDecrease số lượng cần giảm
+//     * @return true nếu thành công, false nếu thất bại
+//     */
+//    public boolean decreaseStock(String phoneIdentifier, int quantityToDecrease) {
+//        Log.d(TAG, "Decreasing stock for: " + phoneIdentifier + " by " + quantityToDecrease);
+//
+//        boolean success = false;
+//
+//        // Tìm điện thoại trong repository để cập nhật trong bộ nhớ
+//        Phone phone = findPhoneByName(phoneIdentifier);
+//
+//        // Nếu tìm thấy trong repository, cập nhật cả trong bộ nhớ
+//        if (phone != null) {
+//            if (phone.getStockQuantity() >= quantityToDecrease) {
+//                // Cập nhật trong bộ nhớ
+//                phone.setStockQuantity(phone.getStockQuantity() - quantityToDecrease);
+//
+//                // Cập nhật trong database
+//                success = phoneDAO.decreasePhoneStock(phone.getId(), quantityToDecrease);
+//                Log.d(TAG, "Updated in memory and database, new stock: " + phone.getStockQuantity() +
+//                        ", database update success: " + success);
+//            } else {
+//                Log.d(TAG, "Not enough stock in repository: " + phone.getStockQuantity() +
+//                        " available, " + quantityToDecrease + " needed");
+//                success = false;
+//            }
+//        } else {
+//            // Nếu không tìm thấy trong repository, chỉ cập nhật database
+//            success = phoneDAO.decreasePhoneStock(phoneIdentifier, quantityToDecrease);
+//            Log.d(TAG, "Updated only in database, success: " + success);
+//        }
+//
+//        return success;
+//    }
 }

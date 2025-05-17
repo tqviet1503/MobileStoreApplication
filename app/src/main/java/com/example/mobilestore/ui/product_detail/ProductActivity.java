@@ -2,6 +2,8 @@ package com.example.mobilestore.ui.product_detail;
 
 import android.content.Intent;
 import android.content.res.Resources;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -68,6 +70,11 @@ public class ProductActivity extends AppCompatActivity {
         } catch (Exception e) {
             Toast.makeText(this, "Error initializing product screen: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 
     private void initializeViews() {
@@ -439,22 +446,75 @@ public class ProductActivity extends AppCompatActivity {
         }
     }
 
+    private boolean checkStockAvailability(SQLiteDatabase db, String phoneName, int orderQuantity) {
+        Cursor cursor = db.query(
+                "phones",
+                new String[]{"stock_quantity"},
+                "phone_name = ?",
+                new String[]{phoneName},
+                null, null, null
+        );
+
+        try {
+            if (cursor.moveToFirst()) {
+                int stockQuantity = cursor.getInt(cursor.getColumnIndexOrThrow("stock_quantity"));
+                return stockQuantity >= orderQuantity;
+            }
+            return false;
+        } finally {
+            cursor.close();
+        }
+    }
+
     private void setupCheckoutButton() {
         try {
             if (btnCheckout != null) {
                 btnCheckout.setOnClickListener(view -> {
-                    // Kiểm tra tồn kho trước khi chuyển đến trang thanh toán
-                    if (selectedPhone != null) {
-                        // Kiểm tra tồn kho thông qua repository
-                        if (repository.hasEnoughStock(selectedPhone.getPhoneName(), quantity)) {
+                    // Lấy database từ repository
+                    SQLiteDatabase db = repository.db;
+
+                    try {
+                        // Kiểm tra tồn kho trước khi chuyển đến trang thanh toán
+                        String productName = selectedProduct != null ? selectedProduct.getName() :
+                                (selectedPhone != null ? selectedPhone.getPhoneName() : null);
+
+                        if (productName == null) {
+                            Toast.makeText(ProductActivity.this, "No product selected", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        // Kiểm tra số lượng tồn kho trong database
+                        Cursor cursor = db.query(
+                                "phones",
+                                new String[]{"stock_quantity"},
+                                "phone_name = ?",
+                                new String[]{productName},
+                                null, null, null
+                        );
+
+                        boolean hasEnoughStock = false;
+                        int availableStock = 0;
+
+                        try {
+                            if (cursor.moveToFirst()) {
+                                availableStock = cursor.getInt(cursor.getColumnIndexOrThrow("stock_quantity"));
+                                hasEnoughStock = availableStock >= quantity;
+                            }
+                        } finally {
+                            cursor.close();
+                        }
+
+                        if (hasEnoughStock) {
                             // Đủ tồn kho, tiến hành đặt hàng
                             proceedToCheckout();
                         } else {
                             // Không đủ tồn kho, hiển thị thông báo
-                            showOutOfStockMessage(selectedPhone.getPhoneName(),
-                                    repository.getPhoneStock(selectedPhone.getPhoneName()));
+                            showOutOfStockMessage(productName, availableStock);
                         }
-                    } else {
+                    } catch (Exception e) {
+                        Toast.makeText(ProductActivity.this, "Error checking stock: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                        // Trong trường hợp lỗi, vẫn cho phép đặt hàng
                         proceedToCheckout();
                     }
                 });
