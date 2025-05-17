@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F9FA"
+    android:padding="16dp">
+
+    <!-- Header: Title + Avatar with material elevation -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/headerCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        android:layout_marginBottom="16dp">
+
+        <RelativeLayout
+            android:id="@+id/headerLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:background="@android:color/white">
+
+            <!-- Title with improved typography -->
+            <TextView
+                android:id="@+id/titleTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Order History"
+                android:textStyle="bold"
+                android:textSize="24sp"
+                android:textColor="#2196F3"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:fontFamily="sans-serif-medium" />
+
+            <!-- Avatar with cleaner styling -->
+            <ImageView
+                android:id="@+id/avatarImageView"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_alignParentEnd="true"
+                android:padding="2dp"
+                android:src="@drawable/admin"
+                android:background="@drawable/circle_avatar_background_blue"
+                android:scaleType="centerCrop"
+                android:elevation="3dp" />
+        </RelativeLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Main Content Section -->
+    <FrameLayout
+        android:id="@+id/contentLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/headerCard"
+        android:layout_above="@+id/footerLayout">
+
+        <!-- RecyclerView for Orders with improved styling -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            android:layout_margin="2dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/orderRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:padding="8dp"
+                android:background="@android:color/white" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- Empty state text with improved styling -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            android:layout_margin="24dp">
+
+            <TextView
+                android:id="@+id/emptyOrdersTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="32dp"
+                android:text="You have no orders yet.\nStart shopping to see your order history here."
+                android:textSize="18sp"
+                android:textColor="#757575"
+                android:visibility="gone"
+                android:lineSpacingExtra="6dp"
+                android:drawableTop="@android:drawable/ic_dialog_info"
+                android:drawablePadding="16dp" />
+        </androidx.cardview.widget.CardView>
+    </FrameLayout>
+
+    <!-- Footer with Back Button at the bottom -->
+    <RelativeLayout
+        android:id="@+id/footerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="16dp">
+
+        <!-- Back Button with improved styling -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#2196F3">
+
+            <Button
+                android:id="@+id/backButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Back to Profile"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textAllCaps="false"
+                android:background="?attr/selectableItemBackground" />
+        </androidx.cardview.widget.CardView>
+    </RelativeLayout>
+
+</RelativeLayout>

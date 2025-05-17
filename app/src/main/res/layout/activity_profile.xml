@@ -191,7 +191,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="customer@example.com"
+                            android:text="customer@gmail.com"
                             android:textColor="#212121" />
 
                         <ImageButton
@@ -257,96 +257,110 @@
                         android:textColor="#2196F3"
                         android:textSize="16sp"
                         android:textStyle="bold"
-                        android:layout_marginBottom="8dp" />
+                        android:layout_marginBottom="12dp" />
 
-                    <!-- Purchase Statistics -->
+                    <!-- Orders Row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:layout_marginTop="4dp">
+                        android:layout_marginBottom="10dp"
+                        android:gravity="center_vertical"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp">
 
-                        <LinearLayout
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_menu_sort_by_size"
+                            android:tint="#2196F3"
+                            android:layout_marginEnd="12dp" />
+
+                        <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
+                            android:text="Orders"
+                            android:textSize="16sp"
+                            android:textColor="#212121" />
 
-                            <TextView
-                                android:id="@+id/totalOrdersTextView"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="12"
-                                android:textSize="20sp"
-                                android:textColor="#2196F3"
-                                android:textStyle="bold" />
+                        <TextView
+                            android:id="@+id/totalOrdersTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="12"
+                            android:textSize="18sp"
+                            android:textColor="#2196F3"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Orders"
-                                android:textSize="12sp"
-                                android:textColor="#757575" />
-                        </LinearLayout>
+                    <!-- Total Spent Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="10dp"
+                        android:gravity="center_vertical"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp">
 
-                        <View
-                            android:layout_width="1dp"
-                            android:layout_height="match_parent"
-                            android:background="#DDDDDD" />
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_menu_info_details"
+                            android:tint="#2196F3"
+                            android:layout_marginEnd="12dp" />
 
-                        <LinearLayout
+                        <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
+                            android:text="Total Spent"
+                            android:textSize="16sp"
+                            android:textColor="#212121" />
 
-                            <TextView
-                                android:id="@+id/totalSpentTextView"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="$1,234"
-                                android:textSize="20sp"
-                                android:textColor="#2196F3"
-                                android:textStyle="bold" />
+                        <TextView
+                            android:id="@+id/totalSpentTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="28.500.000đ"
+                            android:textSize="18sp"
+                            android:textColor="#2196F3"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Total Spent"
-                                android:textSize="12sp"
-                                android:textColor="#757575" />
-                        </LinearLayout>
+                    <!-- Loyalty Points Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp">
 
-                        <View
-                            android:layout_width="1dp"
-                            android:layout_height="match_parent"
-                            android:background="#DDDDDD" />
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/btn_star_big_on"
+                            android:tint="#2196F3"
+                            android:layout_marginEnd="12dp" />
 
-                        <LinearLayout
+                        <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
+                            android:text="Loyalty Points"
+                            android:textSize="16sp"
+                            android:textColor="#212121" />
 
-                            <TextView
-                                android:id="@+id/loyaltyPointsTextView"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="250"
-                                android:textSize="20sp"
-                                android:textColor="#2196F3"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Loyalty Points"
-                                android:textSize="12sp"
-                                android:textColor="#757575" />
-                        </LinearLayout>
+                        <TextView
+                            android:id="@+id/loyaltyPointsTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="250"
+                            android:textSize="18sp"
+                            android:textColor="#2196F3"
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -355,14 +369,13 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="vertical">
 
                 <!-- View Orders Button -->
                 <androidx.cardview.widget.CardView
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="8dp"
                     app:cardCornerRadius="24dp"
                     app:cardBackgroundColor="#E3F2FD"
                     app:cardElevation="2dp">
@@ -380,10 +393,8 @@
 
                 <!-- Contact Customer Button -->
                 <androidx.cardview.widget.CardView
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
                     app:cardCornerRadius="24dp"
                     app:cardBackgroundColor="#2196F3"
                     app:cardElevation="2dp">
@@ -392,7 +403,7 @@
                         android:id="@+id/contactCustomerButton"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
-                        android:text="Contact Customer"
+                        android:text="Contact Admin"
                         android:textColor="#FFFFFF"
                         android:textStyle="bold"
                         android:background="?attr/selectableItemBackground"

@@ -59,6 +59,11 @@
             android:name=".ui.customer_profile.ProfileActivity"
             android:parentActivityName=".ui.shopping.ShoppingActivity" />
 
+        <activity
+            android:name=".ui.order.OrderHistoryActivity"
+            android:exported="false"
+            android:label="Order History" />
+
     </application>
 
 </manifest>

@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="#F5F7FA"
     android:padding="16dp">
 
     <RelativeLayout
@@ -43,13 +43,13 @@
                 android:elevation="3dp" />
         </RelativeLayout>
 
-        <!-- Checkout Card -->
+        <!-- Checkout Card with improved design -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/headerLayout"
             android:layout_marginTop="16dp"
-            app:cardCornerRadius="12dp"
+            app:cardCornerRadius="16dp"
             app:cardElevation="4dp">
 
             <LinearLayout
@@ -58,7 +58,7 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <!-- Title "Checkout" -->
+                <!-- Title "Checkout" with improved style -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -66,76 +66,204 @@
                     android:gravity="center"
                     android:text="Checkout"
                     android:textColor="#2196F3"
-                    android:textSize="18sp"
+                    android:textSize="22sp"
+                    android:fontFamily="sans-serif-medium"
                     android:textStyle="bold" />
 
-                <!-- Order information -->
+                <!-- Order information with improved design -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    app:cardCornerRadius="8dp"
+                    app:cardCornerRadius="12dp"
                     app:cardElevation="2dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="12dp">
+                        android:padding="16dp">
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
+                            android:layout_marginBottom="12dp"
                             android:gravity="center"
                             android:text="Order Information"
                             android:textColor="#212121"
-                            android:textSize="16sp"
+                            android:textSize="18sp"
+                            android:fontFamily="sans-serif-medium"
                             android:textStyle="bold" />
 
-                        <!-- Image of the selected product -->
-                        <ImageView
-                            android:id="@+id/imgProduct"
-                            android:layout_width="match_parent"
-                            android:layout_height="200dp"
-                            android:layout_marginBottom="8dp"
-                            android:contentDescription="Selected Product Image"
-                            android:scaleType="centerCrop" />
-
-                        <TextView
-                            android:id="@+id/txtProductName"
+                        <!-- Image of the selected product with rounded corners -->
+                        <androidx.cardview.widget.CardView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center"
-                            android:text="Product"
-                            android:textColor="#212121"
-                            android:textSize="14sp" />
+                            android:layout_marginBottom="16dp"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="0dp">
 
-                        <TextView
-                            android:id="@+id/txtQuantity"
+                            <ImageView
+                                android:id="@+id/imgProduct"
+                                android:layout_width="match_parent"
+                                android:layout_height="200dp"
+                                android:contentDescription="Selected Product Image"
+                                android:scaleType="fitCenter" />
+                        </androidx.cardview.widget.CardView>
+
+                        <!-- Product information displayed as separate rows -->
+                        <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center"
-                            android:text="Quantity"
-                            android:textColor="#212121"
-                            android:textSize="14sp" />
+                            android:orientation="vertical"
+                            android:background="@drawable/info_background"
+                            android:padding="12dp">
+
+                            <!-- Product Name Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginBottom="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Product: "
+                                    android:textStyle="bold"
+                                    android:textColor="#555555"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:id="@+id/txtProductName"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Product Name"
+                                    android:textColor="#212121"
+                                    android:textSize="15sp" />
+                            </LinearLayout>
+
+                            <!-- Unit Price Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginBottom="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Price: "
+                                    android:textStyle="bold"
+                                    android:textColor="#555555"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:id="@+id/txtUnitPrice"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="0đ"
+                                    android:textColor="#212121"
+                                    android:textSize="15sp" />
+                            </LinearLayout>
+
+                            <!-- Quantity Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginBottom="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Quantity: "
+                                    android:textStyle="bold"
+                                    android:textColor="#555555"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:id="@+id/txtQuantity"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="0"
+                                    android:textColor="#212121"
+                                    android:textSize="15sp" />
+                            </LinearLayout>
+
+                            <!-- Voucher Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginBottom="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Voucher: "
+                                    android:textStyle="bold"
+                                    android:textColor="#555555"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:id="@+id/txtVoucher"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="0%"
+                                    android:textColor="#212121"
+                                    android:textSize="15sp" />
+                            </LinearLayout>
+
+                            <!-- Total Price Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Total Price: "
+                                    android:textStyle="bold"
+                                    android:textColor="#555555"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:id="@+id/txtTotalPrice"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="0đ"
+                                    android:textColor="#D32F2F"
+                                    android:textStyle="bold"
+                                    android:textSize="15sp" />
+                            </LinearLayout>
+                        </LinearLayout>
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
-                <!-- User information -->
+                <!-- User information with improved design -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:orientation="vertical">
 
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="Shipping Information"
+                        android:textColor="#212121"
+                        android:textSize="16sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textStyle="bold" />
+
                     <!-- Display full name -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginBottom="12dp"
                         android:orientation="horizontal">
 
                         <EditText
@@ -148,7 +276,7 @@
                             android:padding="12dp"
                             android:textSize="14sp" />
 
-                        <!-- Edit button -->
+                        <!-- Edit button with improved style -->
                         <androidx.cardview.widget.CardView
                             android:layout_width="32dp"
                             android:layout_height="32dp"
@@ -205,7 +333,44 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Button Group -->
+                <!-- Notes -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <EditText
+                        android:id="@+id/edtNotes"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@drawable/edit_text_background"
+                        android:hint="Enter Your Notes"
+                        android:padding="12dp"
+                        android:textSize="14sp" />
+
+                    <!-- Edit button -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="8dp"
+                        app:cardBackgroundColor="#2196F3"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="2dp">
+
+                        <ImageView
+                            android:id="@+id/btnEditNotes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:src="@android:drawable/ic_menu_edit"
+                            android:tint="#FFFFFF" />
+                    </androidx.cardview.widget.CardView>
+                </LinearLayout>
+
+                <!-- Button Group with improved design -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -216,7 +381,7 @@
                     <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginBottom="10dp"
                         app:cardBackgroundColor="#FFF3E0"
                         app:cardCornerRadius="24dp"
                         app:cardElevation="2dp">
@@ -232,42 +397,24 @@
                             android:textStyle="bold" />
                     </androidx.cardview.widget.CardView>
 
-                    <!-- Notes -->
+                    <!-- Place Order with improved design -->
                     <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="8dp"
-                        app:cardBackgroundColor="#F5F5F5"
-                        app:cardCornerRadius="24dp"
-                        app:cardElevation="2dp">
-
-                        <Button
-                            android:id="@+id/btnNote"
-                            android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:background="?attr/selectableItemBackground"
-                            android:text="Notes"
-                            android:textAllCaps="false"
-                            android:textColor="#757575" />
-                    </androidx.cardview.widget.CardView>
-
-                    <!-- Place Order -->
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        app:cardBackgroundColor="#FFCDD2"
+                        app:cardBackgroundColor="#E57373"
                         app:cardCornerRadius="24dp"
                         app:cardElevation="3dp">
 
                         <Button
                             android:id="@+id/btnOrder"
                             android:layout_width="match_parent"
-                            android:layout_height="48dp"
+                            android:layout_height="52dp"
                             android:background="?attr/selectableItemBackground"
                             android:text="Place Order"
                             android:textAllCaps="false"
-                            android:textColor="#D32F2F"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
                             android:textStyle="bold" />
                     </androidx.cardview.widget.CardView>
                 </LinearLayout>

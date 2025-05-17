@@ -24,58 +24,58 @@ public class AppDatabase extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         // Brands table
         db.execSQL(
-            "CREATE TABLE brands (" +
-            "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-            "name TEXT NOT NULL," +
-            "logo_resource INTEGER," +
-            "phone_count INTEGER DEFAULT 0)"
+                "CREATE TABLE brands (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "name TEXT NOT NULL," +
+                        "logo_resource INTEGER," +
+                        "phone_count INTEGER DEFAULT 0)"
         );
 
         // Phones table
         db.execSQL(
-            "CREATE TABLE phones (" +
-                    "id TEXT PRIMARY KEY," +
-                    "model TEXT NOT NULL," +
-                    "brand TEXT NOT NULL," +     
-                    "price REAL NOT NULL," +
-                    "phone_name TEXT NOT NULL," +
-                    "processor TEXT," +
-                    "ram_gb INTEGER," +
-                    "storage_gb INTEGER," +
-                    "battery TEXT," +
-                    "stock_quantity INTEGER)"
+                "CREATE TABLE phones (" +
+                        "id TEXT PRIMARY KEY," +
+                        "model TEXT NOT NULL," +
+                        "brand TEXT NOT NULL," +
+                        "price REAL NOT NULL," +
+                        "phone_name TEXT NOT NULL," +
+                        "processor TEXT," +
+                        "ram_gb INTEGER," +
+                        "storage_gb INTEGER," +
+                        "battery TEXT," +
+                        "stock_quantity INTEGER)"
         );
 
         // Customers table
         db.execSQL(
-            "CREATE TABLE customers (" +
-            "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-            "name TEXT NOT NULL," +
-            "phone TEXT," +
-            "email TEXT," +
-            "address TEXT)"
+                "CREATE TABLE customers (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "name TEXT NOT NULL," +
+                        "phone TEXT," +
+                        "email TEXT," +
+                        "address TEXT)"
         );
 
         // Bills table
         db.execSQL(
-            "CREATE TABLE bills (" +
-            "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-            "customer_id INTEGER," +
-            "total_amount REAL NOT NULL," +
-            "created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
-            "FOREIGN KEY (customer_id) REFERENCES customers(id))"
+                "CREATE TABLE bills (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "customer_id INTEGER," +
+                        "total_amount REAL NOT NULL," +
+                        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                        "FOREIGN KEY (customer_id) REFERENCES customers(id))"
         );
 
         // Bill details table
         db.execSQL(
-            "CREATE TABLE bill_details (" +
-            "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-            "bill_id INTEGER," +
-            "phone_id TEXT," +
-            "quantity INTEGER," +
-            "unit_price REAL," +
-            "FOREIGN KEY (bill_id) REFERENCES bills(id)," +
-            "FOREIGN KEY (phone_id) REFERENCES phones(id))"
+                "CREATE TABLE bill_details (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "bill_id INTEGER," +
+                        "phone_id TEXT," +
+                        "quantity INTEGER," +
+                        "unit_price REAL," +
+                        "FOREIGN KEY (bill_id) REFERENCES bills(id)," +
+                        "FOREIGN KEY (phone_id) REFERENCES phones(id))"
         );
     }
 
