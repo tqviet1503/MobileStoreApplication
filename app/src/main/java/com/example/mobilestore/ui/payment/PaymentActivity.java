@@ -482,6 +482,19 @@ public class PaymentActivity extends AppCompatActivity {
             String address = edtAddress.getText().toString().trim();
             String notes = edtNotes.getText().toString().trim();
 
+            // Kiểm tra tồn kho trước khi đặt hàng
+            if (!repository.hasEnoughStock(productName, quantity)) {
+                // Hiển thị thông báo không đủ hàng
+                showOutOfStockMessage(productName, repository.getPhoneStock(productName));
+                return;
+            }
+
+            // Cập nhật số lượng tồn kho
+            if (!repository.decreaseStock(productName, quantity)) {
+                showOutOfStockMessage(productName, repository.getPhoneStock(productName));
+                return;
+            }
+
             // Tạo đối tượng Order mới
             Order newOrder = new Order(
                     productName,
@@ -545,6 +558,20 @@ public class PaymentActivity extends AppCompatActivity {
         } catch (Exception e) {
             Toast.makeText(this, "Error placing order: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    // Phương thức hiển thị thông báo hết hàng
+    private void showOutOfStockMessage(String productName, int availableStock) {
+        new AlertDialog.Builder(this)
+                .setTitle("Insufficient Stock")
+                .setMessage("We're sorry, but we don't have enough " + productName + " in stock. " +
+                        "Currently available: " + availableStock + " units.\n\n" +
+                        "Please reduce your quantity or choose another product.")
+                .setPositiveButton("Back to Product", (dialog, which) -> {
+                    finish();
+                })
+                .setCancelable(false)
+                .show();
     }
 
     // Handle back button to return to product activity

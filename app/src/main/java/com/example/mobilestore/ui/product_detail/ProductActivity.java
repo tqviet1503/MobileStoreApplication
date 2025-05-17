@@ -19,6 +19,7 @@ import com.example.mobilestore.data.repository.ProductRepository;
 import com.example.mobilestore.model.Brand;
 import com.example.mobilestore.model.Phone;
 import com.example.mobilestore.ui.shopping.ShoppingActivity;
+import androidx.appcompat.app.AlertDialog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -442,22 +443,50 @@ public class ProductActivity extends AppCompatActivity {
         try {
             if (btnCheckout != null) {
                 btnCheckout.setOnClickListener(view -> {
-                    // Proceed to checkout/payment
-                    try {
-                        // Create intent with product details and quantity
-                        Intent intent = new Intent(ProductActivity.this, com.example.mobilestore.ui.payment.PaymentActivity.class);
-                        intent.putExtra("PRODUCT_NAME", selectedProduct.getName());
-                        intent.putExtra("PRODUCT_PRICE", selectedProduct.getPrice());
-                        intent.putExtra("PRODUCT_QUANTITY", quantity);
-                        intent.putExtra("PRODUCT_SPECS", selectedProduct.getSpecs());
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        Toast.makeText(this, "Error navigating to payment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    // Kiểm tra tồn kho trước khi chuyển đến trang thanh toán
+                    if (selectedPhone != null) {
+                        // Kiểm tra tồn kho thông qua repository
+                        if (repository.hasEnoughStock(selectedPhone.getPhoneName(), quantity)) {
+                            // Đủ tồn kho, tiến hành đặt hàng
+                            proceedToCheckout();
+                        } else {
+                            // Không đủ tồn kho, hiển thị thông báo
+                            showOutOfStockMessage(selectedPhone.getPhoneName(),
+                                    repository.getPhoneStock(selectedPhone.getPhoneName()));
+                        }
+                    } else {
+                        proceedToCheckout();
                     }
                 });
             }
         } catch (Exception e) {
             Toast.makeText(this, "Error setting up checkout button: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // Phương thức hiển thị thông báo hết hàng
+    private void showOutOfStockMessage(String productName, int availableStock) {
+        new AlertDialog.Builder(this)
+                .setTitle("Insufficient Stock")
+                .setMessage("We're sorry, but we don't have enough " + productName + " in stock. " +
+                        "Currently available: " + availableStock + " units.\n\n" +
+                        "Please reduce your quantity or choose another product.")
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    // Phương thức chuyển đến trang thanh toán
+    private void proceedToCheckout() {
+        try {
+            // Create intent with product details and quantity
+            Intent intent = new Intent(ProductActivity.this, com.example.mobilestore.ui.payment.PaymentActivity.class);
+            intent.putExtra("PRODUCT_NAME", selectedProduct.getName());
+            intent.putExtra("PRODUCT_PRICE", selectedProduct.getPrice());
+            intent.putExtra("PRODUCT_QUANTITY", quantity);
+            intent.putExtra("PRODUCT_SPECS", selectedProduct.getSpecs());
+            startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(this, "Error navigating to payment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
