@@ -14,6 +14,8 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 
 /**
  * Lớp quản lý dữ liệu khách hàng và thông tin mua hàng
@@ -34,10 +36,14 @@ public class CustomerDataManager {
 
     private static CustomerDataManager instance;
     private final SharedPreferences prefs;
+    private final Context context;
     private List<Order> ordersList;
+    private static final String KEY_INSTALLATION_ID = "installation_id";
+    private static final String KEY_APP_VERSION = "app_version";
 
     // Singleton pattern
     private CustomerDataManager(Context context) {
+        this.context = context.getApplicationContext();
         prefs = context.getApplicationContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         initDefaultDataIfNeeded();
         loadOrdersList();
@@ -51,8 +57,37 @@ public class CustomerDataManager {
     }
 
     private void initDefaultDataIfNeeded() {
-        if (!prefs.contains(KEY_CUSTOMER_NAME)) {
-            SharedPreferences.Editor editor = prefs.edit();
+        boolean shouldReset = false;
+
+        // Kiểm tra xem có phải là lần cài đặt mới không
+        String currentInstallId = java.util.UUID.randomUUID().toString();
+        String savedInstallId = prefs.getString(KEY_INSTALLATION_ID, null);
+
+        // Lấy version code từ PackageInfo
+        int currentVersion;
+        try {
+            PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            currentVersion = pInfo.versionCode;
+        } catch (PackageManager.NameNotFoundException e) {
+            currentVersion = 0; // Giá trị mặc định nếu không lấy được
+            Log.e("CustomerDataManager", "Could not get package info", e);
+        }
+
+        int savedVersion = prefs.getInt(KEY_APP_VERSION, -1);
+
+        // Nếu không có ID cài đặt hoặc khác version -> lần cài đặt mới
+        if (savedInstallId == null || savedVersion != currentVersion) {
+            shouldReset = true;
+        }
+
+        SharedPreferences.Editor editor = prefs.edit();
+
+        // Lưu ID cài đặt và version mới
+        editor.putString(KEY_INSTALLATION_ID, currentInstallId);
+        editor.putInt(KEY_APP_VERSION, currentVersion);
+
+        if (shouldReset || !prefs.contains(KEY_CUSTOMER_NAME)) {
+            // Reset toàn bộ dữ liệu
             editor.putString(KEY_CUSTOMER_NAME, "Quoc Viet");
             editor.putString(KEY_CUSTOMER_ID, "#12345");
             editor.putString(KEY_CUSTOMER_STATUS, "Active Customer");
@@ -62,8 +97,15 @@ public class CustomerDataManager {
             editor.putInt(KEY_TOTAL_ORDERS, 0);
             editor.putFloat(KEY_TOTAL_SPENT, 0);
             editor.putInt(KEY_LOYALTY_POINTS, 0);
-            editor.apply();
+
+            // Xóa lịch sử đơn hàng
+            editor.remove(KEY_ORDERS_LIST);
+
+            // Khởi tạo danh sách đơn hàng trống
+            ordersList = new ArrayList<>();
         }
+
+        editor.apply();
     }
 
     // Các phương thức lấy thông tin khách hàng

@@ -2,6 +2,8 @@ package com.example.mobilestore.ui.product_detail;
 
 import android.content.Intent;
 import android.content.res.Resources;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -19,6 +21,7 @@ import com.example.mobilestore.data.repository.ProductRepository;
 import com.example.mobilestore.model.Brand;
 import com.example.mobilestore.model.Phone;
 import com.example.mobilestore.ui.shopping.ShoppingActivity;
+import androidx.appcompat.app.AlertDialog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +70,11 @@ public class ProductActivity extends AppCompatActivity {
         } catch (Exception e) {
             Toast.makeText(this, "Error initializing product screen: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 
     private void initializeViews() {
@@ -438,26 +446,107 @@ public class ProductActivity extends AppCompatActivity {
         }
     }
 
+    private boolean checkStockAvailability(SQLiteDatabase db, String phoneName, int orderQuantity) {
+        Cursor cursor = db.query(
+                "phones",
+                new String[]{"stock_quantity"},
+                "phone_name = ?",
+                new String[]{phoneName},
+                null, null, null
+        );
+
+        try {
+            if (cursor.moveToFirst()) {
+                int stockQuantity = cursor.getInt(cursor.getColumnIndexOrThrow("stock_quantity"));
+                return stockQuantity >= orderQuantity;
+            }
+            return false;
+        } finally {
+            cursor.close();
+        }
+    }
+
     private void setupCheckoutButton() {
         try {
             if (btnCheckout != null) {
                 btnCheckout.setOnClickListener(view -> {
-                    // Proceed to checkout/payment
+                    // Lấy database từ repository
+                    SQLiteDatabase db = repository.db;
+
                     try {
-                        // Create intent with product details and quantity
-                        Intent intent = new Intent(ProductActivity.this, com.example.mobilestore.ui.payment.PaymentActivity.class);
-                        intent.putExtra("PRODUCT_NAME", selectedProduct.getName());
-                        intent.putExtra("PRODUCT_PRICE", selectedProduct.getPrice());
-                        intent.putExtra("PRODUCT_QUANTITY", quantity);
-                        intent.putExtra("PRODUCT_SPECS", selectedProduct.getSpecs());
-                        startActivity(intent);
+                        // Kiểm tra tồn kho trước khi chuyển đến trang thanh toán
+                        String productName = selectedProduct != null ? selectedProduct.getName() :
+                                (selectedPhone != null ? selectedPhone.getPhoneName() : null);
+
+                        if (productName == null) {
+                            Toast.makeText(ProductActivity.this, "No product selected", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        // Kiểm tra số lượng tồn kho trong database
+                        Cursor cursor = db.query(
+                                "phones",
+                                new String[]{"stock_quantity"},
+                                "phone_name = ?",
+                                new String[]{productName},
+                                null, null, null
+                        );
+
+                        boolean hasEnoughStock = false;
+                        int availableStock = 0;
+
+                        try {
+                            if (cursor.moveToFirst()) {
+                                availableStock = cursor.getInt(cursor.getColumnIndexOrThrow("stock_quantity"));
+                                hasEnoughStock = availableStock >= quantity;
+                            }
+                        } finally {
+                            cursor.close();
+                        }
+
+                        if (hasEnoughStock) {
+                            // Đủ tồn kho, tiến hành đặt hàng
+                            proceedToCheckout();
+                        } else {
+                            // Không đủ tồn kho, hiển thị thông báo
+                            showOutOfStockMessage(productName, availableStock);
+                        }
                     } catch (Exception e) {
-                        Toast.makeText(this, "Error navigating to payment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(ProductActivity.this, "Error checking stock: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                        // Trong trường hợp lỗi, vẫn cho phép đặt hàng
+                        proceedToCheckout();
                     }
                 });
             }
         } catch (Exception e) {
             Toast.makeText(this, "Error setting up checkout button: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // Phương thức hiển thị thông báo hết hàng
+    private void showOutOfStockMessage(String productName, int availableStock) {
+        new AlertDialog.Builder(this)
+                .setTitle("Insufficient Stock")
+                .setMessage("We're sorry, but we don't have enough " + productName + " in stock. " +
+                        "Currently available: " + availableStock + " units.\n\n" +
+                        "Please reduce your quantity or choose another product.")
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    // Phương thức chuyển đến trang thanh toán
+    private void proceedToCheckout() {
+        try {
+            // Create intent with product details and quantity
+            Intent intent = new Intent(ProductActivity.this, com.example.mobilestore.ui.payment.PaymentActivity.class);
+            intent.putExtra("PRODUCT_NAME", selectedProduct.getName());
+            intent.putExtra("PRODUCT_PRICE", selectedProduct.getPrice());
+            intent.putExtra("PRODUCT_QUANTITY", quantity);
+            intent.putExtra("PRODUCT_SPECS", selectedProduct.getSpecs());
+            startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(this, "Error navigating to payment: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 

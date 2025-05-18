@@ -36,6 +36,7 @@ import com.example.mobilestore.R;
 import com.example.mobilestore.ui.product_detail.ProductActivity;
 import com.example.mobilestore.ui.payment.PaymentActivity;
 import com.example.mobilestore.ui.customer_profile.ProfileActivity;
+import com.example.mobilestore.data.cart.Cart;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -413,6 +414,15 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
         }
     }
 
+    //Random star
+    private float getDeterministicRating(String productId) {
+        int hashCode = productId.hashCode();
+        int baseNumber = Math.abs(hashCode % 11);
+        float rating = 4.0f + (baseNumber / 10.0f); //4.0 to 5.0
+        rating = Math.max(4.0f, Math.min(5.0f, rating));
+        return Math.round(rating * 10) / 10.0f;
+    }
+
     public void refreshData() {
         try {
             // Refresh phone data
@@ -512,11 +522,10 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
 
                 // Random star
                 if (holder.ratingBar != null) {
-                    float randomRating = 4.0f + (float) (Math.random() * 1.0f);
-                    randomRating = Math.round(randomRating * 10) / 10.0f;
-                    holder.ratingBar.setRating(randomRating);
+                    float rating = getDeterministicRating(product.getId());
+                    holder.ratingBar.setRating(rating);
                     if (holder.tvRatingValue != null) {
-                        holder.tvRatingValue.setText(String.format("%.1f", randomRating));
+                        holder.tvRatingValue.setText(String.format("%.1f", rating));
                     }
                 }
 
@@ -550,13 +559,15 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
                 if (holder.btnAddToCart != null) {
                     holder.btnAddToCart.setOnClickListener(v -> {
                         try {
+                            Cart.getInstance(context).addItem(product, 1);
+
                             Toast.makeText(context, "Added " + product.getPhoneName() + " to cart", Toast.LENGTH_SHORT).show();
 
                             // Create Intent with full product information
                             Intent intent = new Intent(context, ProductActivity.class);
                             intent.putExtra("PRODUCT_NAME", product.getPhoneName());
                             intent.putExtra("PRODUCT_PRICE", String.format("%,.0fđ", product.getPrice()));
-                            intent.putExtra("FROM_CART", true); // Add flag to know this is from Add to Cart button
+                            intent.putExtra("FROM_CART", true);
 
                             // Start Activity
                             context.startActivity(intent);
@@ -661,8 +672,6 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
     }
 
     private void simulateCartNavigation() {
-        // Update UI to show selected Cart tab
-        // Set Phones button to unselected state
         if (btnProducts != null) {
             btnProducts.setBackgroundResource(R.drawable.tab_background);
             btnProducts.setTextColor(getResources().getColor(android.R.color.white, null));
@@ -680,36 +689,58 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
         androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
         builder.setTitle("Shopping Cart");
 
-        // Create list of items in cart
-        StringBuilder cartItems = new StringBuilder();
-        int numItemsInCart = 0;
+        // Get data from Cart class
+        Cart cart = Cart.getInstance(this);
+        List<Cart.CartItem> cartItems = cart.getAllItems();
 
-        // Check number of products user has added to cart
-        for (Phone product : allPhones) {
-            if (Math.random() > 0.7) {
-                cartItems.append("• ").append(product.getPhoneName())
-                        .append(" - ").append(String.format("%,.0fđ", product.getPrice()))
-                        .append("\n");
-                numItemsInCart++;
-            }
-        }
-
-        // If no products in cart
-        if (numItemsInCart == 0) {
+        if (cartItems.isEmpty()) {
+            // Empty
             builder.setMessage("Your cart is empty.");
             builder.setPositiveButton("Shop Now", (dialog, id) -> {
                 // Return to Phones tab
                 btnProducts.performClick();
             });
         } else {
-            // Display products and total price
-            cartItems.append("\nTotal Items: ").append(numItemsInCart);
-            builder.setMessage(cartItems.toString());
+            // Display product in the cart
+            StringBuilder cartContent = new StringBuilder();
+            double overallTotalPrice = 0;
+
+            for (Cart.CartItem item : cartItems) {
+                String productName = item.phone.getPhoneName();
+                double unitPrice = item.phone.getPrice();
+                double totalPrice = unitPrice * item.quantity;
+
+                cartContent.append("  • Product: ").append(productName).append("\n")
+                        .append("  • Price: ").append(formatPrice(unitPrice)).append("\n")
+                        .append("  • Quantity: ").append(item.quantity).append("\n")
+                        .append("  • Total Price: ").append(formatPrice(totalPrice)).append("\n");
+
+                overallTotalPrice += totalPrice;
+            }
+
+            builder.setMessage(cartContent.toString());
 
             builder.setPositiveButton("Checkout", (dialog, id) -> {
-                // Go to payment screen
-                if (btnPayment != null) {
-                    btnPayment.performClick();
+                // Nếu có sản phẩm trong giỏ hàng, lấy sản phẩm đầu tiên để thanh toán
+                if (!cartItems.isEmpty()) {
+                    Cart.CartItem item = cartItems.get(0);
+
+                    // Tạo Intent để chuyển sang PaymentActivity với thông tin sản phẩm
+                    Intent intent = new Intent(ShoppingActivity.this, PaymentActivity.class);
+                    intent.putExtra("PRODUCT_NAME", item.phone.getPhoneName());
+                    intent.putExtra("PRODUCT_QUANTITY", item.quantity);
+                    intent.putExtra("PRODUCT_PRICE", formatPrice(item.phone.getPrice()));
+                    intent.putExtra("FROM_CART", true);
+
+                    // Log để kiểm tra dữ liệu trước khi chuyển màn hình
+                    android.util.Log.d("ShoppingActivity", "Sending to PaymentActivity: " +
+                            "Product=" + item.phone.getPhoneName() +
+                            ", Quantity=" + item.quantity +
+                            ", Price=" + formatPrice(item.phone.getPrice()));
+
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(ShoppingActivity.this, "Cart is empty", Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -717,9 +748,19 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
                 // Return to Phones tab
                 btnProducts.performClick();
             });
+
+            // Delete Cart
+            builder.setNeutralButton("Clear Cart", (dialog, id) -> {
+                cart.clear();
+                Toast.makeText(this, "Cart cleared", Toast.LENGTH_SHORT).show();
+            });
         }
 
         androidx.appcompat.app.AlertDialog dialog = builder.create();
         dialog.show();
+    }
+
+    private String formatPrice(double price) {
+        return String.format("%,.0fđ", price);
     }
 }
