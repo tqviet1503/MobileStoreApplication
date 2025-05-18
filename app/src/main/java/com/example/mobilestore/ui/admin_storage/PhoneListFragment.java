@@ -2,9 +2,11 @@ package com.example.mobilestore.ui.admin_storage;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
@@ -61,6 +63,91 @@ public class PhoneListFragment extends Fragment implements PhoneAdapter.OnPhoneC
     @Override
     public void onPhoneClick(Phone phone) {
         showPhoneDetailsDialog(phone);
+    }
+
+    @Override
+    public void onPhoneAdjustClick(Phone phone) {
+        showAdjustPhoneDialog(phone);
+    }
+
+    private void showAdjustPhoneDialog(Phone phone) {
+        View dialogView = LayoutInflater.from(getContext())
+                .inflate(R.layout.dialog_adjust_phone, null);
+
+        EditText edtPrice = dialogView.findViewById(R.id.adjust_price);
+        EditText edtStock = dialogView.findViewById(R.id.adjust_stock);
+        EditText edtBattery = dialogView.findViewById(R.id.adjust_battery);
+        EditText edtRam = dialogView.findViewById(R.id.adjust_ram);
+        EditText edtStorage = dialogView.findViewById(R.id.adjust_storage);
+        EditText edtModel = dialogView.findViewById(R.id.adjust_model);
+        EditText edtCpu = dialogView.findViewById(R.id.adjust_cpu);
+
+        edtPrice.setText(String.valueOf(phone.getPrice()));
+        edtStock.setText(String.valueOf(phone.getStockQuantity()));
+        edtBattery.setText(String.valueOf(phone.getPerformance().getBatteryCapacity()));
+        edtRam.setText(String.valueOf(phone.getPerformance().getRamGB()));
+        edtStorage.setText(String.valueOf(phone.getPerformance().getStorageGB()));
+        edtModel.setText(phone.getModel());
+        edtCpu.setText(phone.getPerformance().getProcessor());
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Adjust Phone")
+                .setView(dialogView)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    String priceStr = edtPrice.getText().toString().trim();
+                    String stockStr = edtStock.getText().toString().trim();
+                    String batteryStr = edtBattery.getText().toString().trim();
+                    String ramStr = edtRam.getText().toString().trim();
+                    String storageStr = edtStorage.getText().toString().trim();
+                    String modelStr = edtModel.getText().toString().trim();
+                    String cpuStr = edtCpu.getText().toString().trim();
+
+                    double newPrice = phone.getPrice();
+                    int newStock = phone.getStockQuantity();
+
+                    if (!priceStr.isEmpty()) {
+                        newPrice = Double.parseDouble(priceStr);
+                    }
+                    if (!stockStr.isEmpty()) {
+                        newStock = Integer.parseInt(stockStr);
+                    }
+                    if (!batteryStr.isEmpty()) {
+                        phone.getPerformance().setBatteryCapacity(String.valueOf(Integer.parseInt(batteryStr)));
+                    }
+                    if (!ramStr.isEmpty()) {
+                        phone.getPerformance().setRamGB(Integer.parseInt(ramStr));
+                    }
+                    if (!storageStr.isEmpty()) {
+                        phone.getPerformance().setStorageGB(Integer.parseInt(storageStr));
+                    }
+                    if (!modelStr.isEmpty()) {
+                        phone.setModel(modelStr);
+                    }
+                    if (!cpuStr.isEmpty()) {
+                        phone.getPerformance().setProcessor(cpuStr);
+                    }
+                    // Update database
+                    repository.updateAdjustedPhoneInfo(phone.getId(), newPrice, newStock, modelStr, cpuStr, Integer.parseInt(ramStr), Integer.parseInt(storageStr), batteryStr);
+
+                    // Reload list
+                    List<Phone> updatedPhones = repository.getPhonesForBrand(brandName);
+                    adapter.setPhones(updatedPhones);
+                    adapter.notifyDataSetChanged();
+                })
+                .setNegativeButton("Cancel", null)
+                .setNeutralButton("Remove", (dialog, which) -> {
+                    new AlertDialog.Builder(requireContext())
+                            .setTitle("Confirm Remove")
+                            .setMessage("Are you sure you want to remove this phone?")
+                            .setPositiveButton("Yes", (confirmDialog, confirmWhich) -> {
+                                String phoneId = phone.getId();
+                                repository.removePhoneById(phoneId);
+                                adapter.removePhoneById(phoneId);
+                            })
+                            .setNegativeButton("No", null)
+                            .show();
+                })
+                .show();
     }
 
     private void showPhoneDetailsDialog(Phone phone) {

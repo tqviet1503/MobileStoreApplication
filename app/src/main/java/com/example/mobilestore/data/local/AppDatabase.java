@@ -7,7 +7,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class AppDatabase extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "mobile_store.db";
     private static final int DATABASE_VERSION = 9;
-
     private static AppDatabase instance;
 
     private AppDatabase(Context context) {
@@ -86,6 +85,7 @@ public class AppDatabase extends SQLiteOpenHelper {
                         "id INTEGER PRIMARY KEY," +
                         "bill_id INTEGER," +
                         "phone_id TEXT," +
+                        "phone_name TEXT, " +
                         "quantity INTEGER," +
                         "unit_price REAL," +
                         "FOREIGN KEY (bill_id) REFERENCES bills(id)," +

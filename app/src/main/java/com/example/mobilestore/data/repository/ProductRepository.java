@@ -24,6 +24,7 @@ public class ProductRepository {
     public interface OnDataChangeListener {
         void onBrandAdded(Brand brand);
         void onPhoneAdded(Phone phone);
+        void onDataChanged();
     }
 
     private ProductRepository(Context context) {
@@ -135,10 +136,15 @@ public class ProductRepository {
     public void addListener(OnDataChangeListener listener) {
         listeners.add(listener);
     }
-
     public void removeListener(OnDataChangeListener listener) {
         listeners.remove(listener);
     }
+    private void notifyDataChanged() {
+        for (OnDataChangeListener listener : listeners) {
+            listener.onDataChanged();
+        }
+    }
+
 
     private void notifyBrandAdded(Brand brand) {
         for (OnDataChangeListener listener : listeners) {
@@ -221,6 +227,53 @@ public class ProductRepository {
         }
 
         return null;
+    }
+
+    public void updateAdjustedPhoneInfo(String phoneId, double price, int stockQuantity, String model, String cpu, int ram, int storage, String battery) {
+        ContentValues values = new ContentValues();
+        values.put("price", price);
+        values.put("stock_quantity", stockQuantity);
+        values.put("model", model);
+        values.put("processor", cpu);
+        values.put("ram_gb", ram);
+        values.put("storage_gb", storage);
+        values.put("battery", battery);
+        db.update("phones", values, "id = ?", new String[]{phoneId});
+    }
+
+    public int getTotalCustomerCount() {
+        int count = 0;
+        SQLiteDatabase db = this.db;
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM customers", null);
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+        }
+        cursor.close();
+        return count;
+    }
+
+    public void removePhoneById(String phoneId) {
+        db.beginTransaction();
+        try {
+            Cursor cursor = db.query("phones", new String[]{"brand"},
+                    "id = ?", new String[]{phoneId}, null, null, null);
+            String brandName = null;
+            if (cursor.moveToFirst()) {
+                brandName = cursor.getString(cursor.getColumnIndexOrThrow("brand"));
+            }
+            cursor.close();
+
+            int rowsAffected = db.delete("phones", "id = ?", new String[]{phoneId});
+
+            if (brandName != null && rowsAffected > 0) {
+                db.execSQL("UPDATE brands SET phone_count = phone_count - 1 WHERE name = ?",
+                        new String[]{brandName});
+                db.setTransactionSuccessful();
+                notifyDataChanged();
+            }
+        } finally {
+            db.endTransaction();
+        }
     }
 //
 //    /**

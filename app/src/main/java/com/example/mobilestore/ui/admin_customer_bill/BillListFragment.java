@@ -67,6 +67,7 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
             if (isComplexBill) {
                 Log.d(TAG, "Using multi-item dialog for bill " + bill.getBillId());
                 showMultiItemBillDetailsDialog(bill);
+
             } else {
                 Log.d(TAG, "Using single-item dialog for bill " + bill.getBillId());
                 showSingleItemBillDetailsDialog(bill);

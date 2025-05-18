@@ -464,6 +464,9 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
         runOnUiThread(this::refreshData);
     }
 
+    @Override
+    public void onDataChanged() {};
+
     // Adapter class for RecyclerView using the item_phone.xml layout
     public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductViewHolder> {
         private List<Phone> products;

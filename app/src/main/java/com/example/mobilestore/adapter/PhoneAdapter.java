@@ -3,6 +3,7 @@ package com.example.mobilestore.adapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
@@ -21,6 +22,7 @@ public class PhoneAdapter extends RecyclerView.Adapter<PhoneAdapter.PhoneViewHol
 
     public interface OnPhoneClickListener {
         void onPhoneClick(Phone phone);
+        void onPhoneAdjustClick(Phone phone);
     }
 
     public PhoneAdapter(List<Phone> phones, OnPhoneClickListener listener) {
@@ -47,16 +49,22 @@ public class PhoneAdapter extends RecyclerView.Adapter<PhoneAdapter.PhoneViewHol
         return phones != null ? phones.size() : 0;
     }
 
+    public void setPhones(List<Phone> phones) {
+        this.phones = phones;
+    }
+
     static class PhoneViewHolder extends RecyclerView.ViewHolder {
         private final TextView brandText;
         private final TextView phoneNameText;
         private final TextView quantityText;
+        Button buttonAdjust;
 
         PhoneViewHolder(@NonNull View itemView) {
             super(itemView);
             brandText = itemView.findViewById(R.id.tvBrand);
             phoneNameText = itemView.findViewById(R.id.tvPhoneName);
             quantityText = itemView.findViewById(R.id.tvQuantity);
+            buttonAdjust = itemView.findViewById(R.id.buttonAdjust);
         }
 
         void bind(Phone phone, OnPhoneClickListener listener) {
@@ -71,6 +79,20 @@ public class PhoneAdapter extends RecyclerView.Adapter<PhoneAdapter.PhoneViewHol
                     listener.onPhoneClick(phone);
                 }
             });
+
+            buttonAdjust.setOnClickListener(v -> {
+                if (listener != null) listener.onPhoneAdjustClick(phone);
+            });
+        }
+    }
+
+    public void removePhoneById(String phoneId) {
+        for (int i = 0; i < phones.size(); i++) {
+            if (phones.get(i).getId().equals(phoneId)) {
+                phones.remove(i);
+                notifyItemRemoved(i);
+                return;
+            }
         }
     }
 

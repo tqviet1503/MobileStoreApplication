@@ -1,0 +1,219 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- Hint Text -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Hint: Only fill in the fields you wish to update."
+        android:textColor="#FF9800"
+        android:textStyle="italic"
+        android:textSize="14sp"
+        android:paddingBottom="12dp"/>
+
+    <!-- Model Field -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:text="Model: "
+            android:textSize="16sp"
+            android:textColor="#212121"
+            android:paddingEnd="8dp"/>
+
+        <EditText
+            android:id="@+id/adjust_model"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:hint="Enter Model"
+            android:inputType="text"
+            android:padding="12dp"
+            android:background="@android:drawable/edit_text"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- CPU Field -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:text="CPU: "
+            android:textSize="16sp"
+            android:textColor="#212121"
+            android:paddingEnd="8dp"/>
+
+        <EditText
+            android:id="@+id/adjust_cpu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:hint="Enter CPU"
+            android:inputType="text"
+            android:padding="12dp"
+            android:background="@android:drawable/edit_text"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- RAM Field -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:text="RAM: "
+            android:textSize="16sp"
+            android:textColor="#212121"
+            android:paddingEnd="8dp"/>
+
+        <EditText
+            android:id="@+id/adjust_ram"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:hint="Enter RAM (e.g., 8GB)"
+            android:inputType="text"
+            android:padding="12dp"
+            android:background="@android:drawable/edit_text"
+            android:textSize="16sp"/>
+    </LinearLayout>
+
+    <!-- Storage Field -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:text="Storage: "
+            android:textSize="16sp"
+            android:textColor="#212121"
+            android:paddingEnd="8dp"/>
+
+        <EditText
+            android:id="@+id/adjust_storage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:hint="Enter Storage (e.g., 256GB)"
+            android:inputType="text"
+            android:padding="12dp"
+            android:background="@android:drawable/edit_text"
+            android:textSize="16sp"/>
+    </LinearLayout>
+
+    <!-- Battery Field -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:text="Battery: "
+            android:textSize="16sp"
+            android:textColor="#212121"
+            android:paddingEnd="8dp"/>
+
+        <EditText
+            android:id="@+id/adjust_battery"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@android:drawable/edit_text"
+            android:hint="Enter Battery (e.g., 4000mAh)"
+            android:inputType="text"
+            android:minHeight="48dp"
+            android:padding="12dp"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- Price Field -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:text="Price: "
+            android:textSize="16sp"
+            android:textColor="#212121"
+            android:paddingEnd="8dp"/>
+
+        <EditText
+            android:id="@+id/adjust_price"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:hint="Enter Price"
+            android:inputType="numberDecimal"
+            android:padding="12dp"
+            android:background="@android:drawable/edit_text"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- Stock Field -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:text="Stock: "
+            android:textSize="16sp"
+            android:textColor="#212121"
+            android:paddingEnd="8dp"/>
+
+        <EditText
+            android:id="@+id/adjust_stock"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:hint="Enter Stock Quantity"
+            android:inputType="number"
+            android:padding="12dp"
+            android:background="@android:drawable/edit_text"
+            android:textSize="16sp"/>
+    </LinearLayout>
+</LinearLayout>

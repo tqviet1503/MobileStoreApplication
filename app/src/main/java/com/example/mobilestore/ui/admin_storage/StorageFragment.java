@@ -33,6 +33,18 @@ public class StorageFragment extends Fragment implements BrandAdapter.OnBrandCli
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         repository = ProductRepository.getInstance(requireContext());
+        repository.addListener(new ProductRepository.OnDataChangeListener() {
+            @Override
+            public void onBrandAdded(Brand brand) { }
+
+            @Override
+            public void onPhoneAdded(Phone phone) { }
+
+            @Override
+            public void onDataChanged() {
+                updateTotalProductValue();
+            }
+        });
     }
 
     @Override

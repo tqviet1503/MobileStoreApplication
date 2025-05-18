@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -26,6 +27,7 @@ public class CustomerBillFragment extends Fragment implements BrandAdapter.OnBra
     private BrandAdapter adapter;
     private RecyclerView recyclerView;
     private ProductRepository repository;
+    private TextView totalCustomerText;
     private FloatingActionButton fabAddBrand;
     private List<Brand> listView = new ArrayList<>();
 
@@ -76,7 +78,9 @@ public class CustomerBillFragment extends Fragment implements BrandAdapter.OnBra
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // TODO: implement base on StorageFragment when finish database
+        totalCustomerText = view.findViewById(R.id.totalCustomer);
+        int totalCustomers = repository.getTotalCustomerCount();
+        totalCustomerText.setText(totalCustomers + " Customers");
     }
 
     private void setupRecyclerView() {

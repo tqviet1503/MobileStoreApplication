@@ -9,7 +9,6 @@ public class ProductActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_product);
-        setupBottomNavigation(R.id.navigation_product);
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()

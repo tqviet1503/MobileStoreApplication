@@ -737,6 +737,7 @@ public class PaymentActivity extends AppCompatActivity {
                     ContentValues detailValues = new ContentValues();
                     detailValues.put("bill_id", billId);
                     detailValues.put("phone_id", getPhoneIdByName(productName));
+                    detailValues.put("phone_name", productName);
                     detailValues.put("quantity", quantity);
                     detailValues.put("unit_price", unitPrice);
                     db.insert("bill_details", null, detailValues);
@@ -753,6 +754,7 @@ public class PaymentActivity extends AppCompatActivity {
                         ContentValues detailValues = new ContentValues();
                         detailValues.put("bill_id", billId);
                         detailValues.put("phone_id", getPhoneIdByName(item.phone.getPhoneName()));
+                        detailValues.put("phone_name", productName);
                         detailValues.put("quantity", item.quantity);
                         detailValues.put("unit_price", item.phone.getPrice());
                         db.insert("bill_details", null, detailValues);

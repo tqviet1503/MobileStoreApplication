@@ -13,8 +13,4 @@
         android:id="@+id/navigation_customer"
         android:icon="@drawable/ic_customer"
         tools:ignore="MenuTitle" />
-    <item
-        android:id="@+id/navigation_product"
-        android:icon="@drawable/ic_product"
-        tools:ignore="MenuTitle" />
 </menu>
