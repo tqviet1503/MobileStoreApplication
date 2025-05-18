@@ -37,6 +37,7 @@ import com.example.mobilestore.ui.product_detail.ProductActivity;
 import com.example.mobilestore.ui.payment.PaymentActivity;
 import com.example.mobilestore.ui.customer_profile.ProfileActivity;
 import com.example.mobilestore.data.cart.Cart;
+import com.example.mobilestore.ui.cart.CartActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -672,92 +673,28 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
     }
 
     private void simulateCartNavigation() {
-        if (btnProducts != null) {
-            btnProducts.setBackgroundResource(R.drawable.tab_background);
-            btnProducts.setTextColor(getResources().getColor(android.R.color.white, null));
-            btnProducts.setAlpha(0.9f);
-        }
-
-        // Set Cart button to selected state
-        if (btnShop != null) {
-            btnShop.setBackgroundResource(R.drawable.selected_tab_background);
-            btnShop.setTextColor(getResources().getColor(android.R.color.white, null));
-            btnShop.setAlpha(1.0f);
-        }
-
-        // Display a Dialog simulating the cart screen
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
-        builder.setTitle("Shopping Cart");
-
-        // Get data from Cart class
-        Cart cart = Cart.getInstance(this);
-        List<Cart.CartItem> cartItems = cart.getAllItems();
-
-        if (cartItems.isEmpty()) {
-            // Empty
-            builder.setMessage("Your cart is empty.");
-            builder.setPositiveButton("Shop Now", (dialog, id) -> {
-                // Return to Phones tab
-                btnProducts.performClick();
-            });
-        } else {
-            // Display product in the cart
-            StringBuilder cartContent = new StringBuilder();
-            double overallTotalPrice = 0;
-
-            for (Cart.CartItem item : cartItems) {
-                String productName = item.phone.getPhoneName();
-                double unitPrice = item.phone.getPrice();
-                double totalPrice = unitPrice * item.quantity;
-
-                cartContent.append("  • Product: ").append(productName).append("\n")
-                        .append("  • Price: ").append(formatPrice(unitPrice)).append("\n")
-                        .append("  • Quantity: ").append(item.quantity).append("\n")
-                        .append("  • Total Price: ").append(formatPrice(totalPrice)).append("\n");
-
-                overallTotalPrice += totalPrice;
+        try {
+            // Cập nhật giao diện các button
+            if (btnProducts != null) {
+                btnProducts.setBackgroundResource(R.drawable.tab_background);
+                btnProducts.setTextColor(getResources().getColor(android.R.color.white, null));
+                btnProducts.setAlpha(0.9f);
             }
 
-            builder.setMessage(cartContent.toString());
+            // Set Cart button to selected state
+            if (btnShop != null) {
+                btnShop.setBackgroundResource(R.drawable.selected_tab_background);
+                btnShop.setTextColor(getResources().getColor(android.R.color.white, null));
+                btnShop.setAlpha(1.0f);
+            }
 
-            builder.setPositiveButton("Checkout", (dialog, id) -> {
-                // Nếu có sản phẩm trong giỏ hàng, lấy sản phẩm đầu tiên để thanh toán
-                if (!cartItems.isEmpty()) {
-                    Cart.CartItem item = cartItems.get(0);
+            // Chuyển đến CartActivity
+            Intent intent = new Intent(ShoppingActivity.this, CartActivity.class);
+            startActivity(intent);
 
-                    // Tạo Intent để chuyển sang PaymentActivity với thông tin sản phẩm
-                    Intent intent = new Intent(ShoppingActivity.this, PaymentActivity.class);
-                    intent.putExtra("PRODUCT_NAME", item.phone.getPhoneName());
-                    intent.putExtra("PRODUCT_QUANTITY", item.quantity);
-                    intent.putExtra("PRODUCT_PRICE", formatPrice(item.phone.getPrice()));
-                    intent.putExtra("FROM_CART", true);
-
-                    // Log để kiểm tra dữ liệu trước khi chuyển màn hình
-                    android.util.Log.d("ShoppingActivity", "Sending to PaymentActivity: " +
-                            "Product=" + item.phone.getPhoneName() +
-                            ", Quantity=" + item.quantity +
-                            ", Price=" + formatPrice(item.phone.getPrice()));
-
-                    startActivity(intent);
-                } else {
-                    Toast.makeText(ShoppingActivity.this, "Cart is empty", Toast.LENGTH_SHORT).show();
-                }
-            });
-
-            builder.setNegativeButton("Continue Shopping", (dialog, id) -> {
-                // Return to Phones tab
-                btnProducts.performClick();
-            });
-
-            // Delete Cart
-            builder.setNeutralButton("Clear Cart", (dialog, id) -> {
-                cart.clear();
-                Toast.makeText(this, "Cart cleared", Toast.LENGTH_SHORT).show();
-            });
+        } catch (Exception e) {
+            Toast.makeText(this, "Error navigating to cart: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-
-        androidx.appcompat.app.AlertDialog dialog = builder.create();
-        dialog.show();
     }
 
     private String formatPrice(double price) {

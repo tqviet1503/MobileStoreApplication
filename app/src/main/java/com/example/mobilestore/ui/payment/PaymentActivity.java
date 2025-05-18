@@ -10,11 +10,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.mobilestore.R;
 import com.example.mobilestore.data.repository.ProductRepository;
 import com.example.mobilestore.data.customer.CustomerDataManager;
@@ -27,6 +30,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import com.example.mobilestore.data.cart.Cart;
+import android.view.LayoutInflater;
+import android.view.ViewGroup;
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class PaymentActivity extends AppCompatActivity {
 
@@ -36,6 +44,8 @@ public class PaymentActivity extends AppCompatActivity {
     private EditText edtName, edtAddress, edtNotes;
     private Button btnApplyCode, btnOrder;
     private ImageView btnEditName, btnEditAddress, btnEditNotes;
+    private RecyclerView rvOrderItems;
+    private LinearLayout singleProductLayout, productNameLayout, unitPriceLayout;
 
     // Data
     private String productName;
@@ -44,8 +54,11 @@ public class PaymentActivity extends AppCompatActivity {
     private double totalPrice = 0.0;
     private double originalTotalPrice;
     private boolean isDiscountApplied = false;
+    private int totalItems = 0;
+    private boolean isMultipleItems = false;
     private ProductRepository repository;
     private CustomerDataManager customerDataManager;
+    private List<Cart.CartItem> selectedCartItems = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,11 +103,15 @@ public class PaymentActivity extends AppCompatActivity {
     }
 
     private void calculateTotalPrice() {
-        // Calculate total price (unitPrice * quantity)
-        totalPrice = unitPrice * quantity;
-
-        // Log the calculation for debugging
-        android.util.Log.d("PaymentActivity", "Calculating total: " + unitPrice + " * " + quantity + " = " + totalPrice);
+        // Nếu đến từ giỏ hàng với nhiều sản phẩm và đã có tổng giá, không cần tính lại
+        if (isMultipleItems && totalItems > 1 && totalPrice > 0) {
+            // Giá đã được đặt trong getDataFromIntent()
+            android.util.Log.d("PaymentActivity", "Using cart total price: " + totalPrice);
+        } else {
+            // Tính giá bình thường cho một sản phẩm
+            totalPrice = unitPrice * quantity;
+            android.util.Log.d("PaymentActivity", "Calculating total: " + unitPrice + " * " + quantity + " = " + totalPrice);
+        }
 
         // Safety check - ensure total price is not negative
         if (totalPrice < 0) {
@@ -121,6 +138,10 @@ public class PaymentActivity extends AppCompatActivity {
             btnOrder = findViewById(R.id.btnOrder);
             btnEditName = findViewById(R.id.btnEditName);
             btnEditAddress = findViewById(R.id.btnEditAddress);
+            rvOrderItems = findViewById(R.id.rvOrderItems);
+            singleProductLayout = findViewById(R.id.singleProductLayout);
+            productNameLayout = findViewById(R.id.productNameLayout);
+            unitPriceLayout = findViewById(R.id.unitPriceLayout);
 
             edtNotes.setEnabled(false);
         } catch (Exception e) {
@@ -136,16 +157,35 @@ public class PaymentActivity extends AppCompatActivity {
                 quantity = intent.getIntExtra("PRODUCT_QUANTITY", 1);
                 String productPrice = intent.getStringExtra("PRODUCT_PRICE");
 
+                // Kiểm tra nếu là đơn hàng nhiều sản phẩm từ giỏ hàng
+                isMultipleItems = intent.getBooleanExtra("FROM_CART", false);
+                if (isMultipleItems) {
+                    // Lấy tổng số sản phẩm
+                    totalItems = intent.getIntExtra("TOTAL_ITEMS", 1);
+
+                    // Lấy tổng giá trị đơn hàng
+                    totalPrice = intent.getDoubleExtra("TOTAL_PRICE", 0.0);
+
+                    android.util.Log.d("PaymentActivity", "Total items: " + totalItems);
+                    android.util.Log.d("PaymentActivity", "Total price: " + totalPrice);
+
+                    // Lấy danh sách các sản phẩm được chọn từ Cart
+                    selectedCartItems = Cart.getInstance(this).getSelectedItems();
+                    android.util.Log.d("PaymentActivity", "Selected items: " + selectedCartItems.size());
+                }
+
                 // Validate data - set defaults if null
                 if (productName == null) productName = "Sample Product";
 
                 // Get the unit price from the repository based on product name
-                unitPrice = getUnitPriceFromRepository(productName);
+                if (!isMultipleItems || selectedCartItems.isEmpty()) {
+                    unitPrice = getUnitPriceFromRepository(productName);
 
-                // If we couldn't find the price in the repository, try to extract from the formatted price string
-                if (unitPrice <= 0 && productPrice != null) {
-                    unitPrice = extractPrice(productPrice);
-                    android.util.Log.d("PaymentActivity", "Extracted price from formatted string: " + unitPrice + " from " + productPrice);
+                    // If we couldn't find the price in the repository, try to extract from the formatted price string
+                    if (unitPrice <= 0 && productPrice != null) {
+                        unitPrice = extractPrice(productPrice);
+                        android.util.Log.d("PaymentActivity", "Extracted price from formatted string: " + unitPrice + " from " + productPrice);
+                    }
                 }
             } else {
                 // Default values if no intent data
@@ -292,32 +332,12 @@ public class PaymentActivity extends AppCompatActivity {
 
     private void setupUI() {
         try {
-            // Set product information on separate lines
-            if (txtProductName != null) {
-                txtProductName.setText(productName);
-            }
-
-            if (txtQuantity != null) {
-                txtQuantity.setText(String.valueOf(quantity));
-            }
-
-            // Set unit price
-            if (txtUnitPrice != null) {
-                txtUnitPrice.setText(formatPrice(unitPrice));
-            }
-
-            if (txtTotalPrice != null) {
-                txtTotalPrice.setText(formatPrice(totalPrice));
-            }
-
-            // Set product image
-            if (imgProduct != null) {
-                try {
-                    imgProduct.setImageResource(R.drawable.phone_sample);
-                } catch (Resources.NotFoundException e) {
-                    // Use a default image if resource not found
-                    imgProduct.setImageResource(android.R.drawable.ic_menu_gallery);
-                }
+            if (isMultipleItems && !selectedCartItems.isEmpty()) {
+                // Trường hợp nhiều sản phẩm - hiển thị RecyclerView
+                setupMultipleProductsUI();
+            } else {
+                // Trường hợp một sản phẩm - hiển thị thông tin sản phẩm đơn
+                setupSingleProductUI();
             }
 
             // Set customer data from CustomerDataManager
@@ -337,6 +357,78 @@ public class PaymentActivity extends AppCompatActivity {
             }
         } catch (Exception e) {
             Toast.makeText(this, "Error setting up payment UI: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // Phương thức mới để hiển thị nhiều sản phẩm
+    private void setupMultipleProductsUI() {
+        // Ẩn layout hiển thị một sản phẩm
+        singleProductLayout.setVisibility(View.GONE);
+        productNameLayout.setVisibility(View.GONE);
+        unitPriceLayout.setVisibility(View.GONE);
+
+        // Hiển thị RecyclerView danh sách sản phẩm
+        rvOrderItems.setVisibility(View.VISIBLE);
+
+        // Thiết lập RecyclerView với layout mới
+        rvOrderItems.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
+        OrderItemAdapter adapter = new OrderItemAdapter(selectedCartItems);
+        rvOrderItems.setAdapter(adapter);
+
+        // Cập nhật số lượng và tổng giá
+        if (txtQuantity != null) {
+            txtQuantity.setText(String.valueOf(totalItems));
+        }
+
+        if (txtTotalPrice != null) {
+            txtTotalPrice.setText(formatPrice(totalPrice));
+        }
+
+        if (txtVoucher != null) {
+            txtVoucher.setText("0%");
+        }
+    }
+
+    // Phương thức hiển thị một sản phẩm
+    private void setupSingleProductUI() {
+        // Hiển thị layout một sản phẩm
+        singleProductLayout.setVisibility(View.VISIBLE);
+        productNameLayout.setVisibility(View.VISIBLE);
+        unitPriceLayout.setVisibility(View.VISIBLE);
+
+        // Ẩn RecyclerView
+        rvOrderItems.setVisibility(View.GONE);
+
+        // Set product information on separate lines
+        if (txtProductName != null) {
+            txtProductName.setText(productName);
+        }
+
+        if (txtQuantity != null) {
+            txtQuantity.setText(String.valueOf(quantity));
+        }
+
+        // Set unit price
+        if (txtUnitPrice != null) {
+            txtUnitPrice.setText(formatPrice(unitPrice));
+        }
+
+        if (txtTotalPrice != null) {
+            txtTotalPrice.setText(formatPrice(totalPrice));
+        }
+
+        // Set product image
+        if (imgProduct != null) {
+            try {
+                imgProduct.setImageResource(R.drawable.phone_sample);
+            } catch (Resources.NotFoundException e) {
+                // Use a default image if resource not found
+                imgProduct.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
+        }
+
+        if (txtVoucher != null) {
+            txtVoucher.setText("0%");
         }
     }
 
@@ -507,16 +599,44 @@ public class PaymentActivity extends AppCompatActivity {
             String notes = edtNotes.getText().toString().trim();
 
             // Tạo đối tượng Order mới
-            Order newOrder = new Order(
-                    productName,
-                    quantity,
-                    unitPrice,
-                    totalPrice,
-                    isDiscountApplied,
-                    name,
-                    address,
-                    notes
-            );
+            Order newOrder;
+
+            if (isMultipleItems && !selectedCartItems.isEmpty()) {
+                // Create an order with multiple items
+                List<Order.OrderItem> orderItems = new ArrayList<>();
+
+                // Convert cart items to order items
+                for (Cart.CartItem cartItem : selectedCartItems) {
+                    Order.OrderItem orderItem = new Order.OrderItem(
+                            cartItem.phone.getPhoneName(),
+                            cartItem.quantity,
+                            cartItem.phone.getPrice()
+                    );
+                    orderItems.add(orderItem);
+                }
+
+                // Create the multi-item order
+                newOrder = new Order(
+                        orderItems,
+                        totalPrice,
+                        isDiscountApplied,
+                        name,
+                        address,
+                        notes
+                );
+            } else {
+                // Create a single-item order (using existing constructor)
+                newOrder = new Order(
+                        productName,
+                        quantity,
+                        unitPrice,
+                        totalPrice,
+                        isDiscountApplied,
+                        name,
+                        address,
+                        notes
+                );
+            }
 
             // Lưu đơn hàng vào CustomerDataManager
             if (customerDataManager != null) {
@@ -530,17 +650,23 @@ public class PaymentActivity extends AppCompatActivity {
 
             SQLiteDatabase db = repository.db;
 
-            //check so luong
-            if (!checkStockAvailability(db, productName, quantity)) {
-                Toast.makeText(this,
-                        "Not enough stock available. Please reduce quantity.",
-                        Toast.LENGTH_LONG).show();
-                return;
+            // Kiểm tra số lượng tồn kho cho đơn hàng
+            if (!isMultipleItems || selectedCartItems.isEmpty()) {
+                // Kiểm tra stock cho đơn hàng đơn
+                if (!checkStockAvailability(db, productName, quantity)) {
+                    Toast.makeText(this,
+                            "Not enough stock available. Please reduce quantity.",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+            } else {
+                // Đơn hàng nhiều mặt hàng - giả định đã kiểm tra ở màn hình giỏ hàng
+                // và chỉ cho phép chọn những mặt hàng có đủ số lượng
             }
 
             db.beginTransaction();
             try {
-                String customerId;
+                long customerId;
                 Cursor customerCursor = db.query("customers",
                         new String[]{"id"},
                         "name = ?",
@@ -549,7 +675,7 @@ public class PaymentActivity extends AppCompatActivity {
 
                 if (customerCursor.moveToFirst()) {
                     // update customer
-                    customerId = customerCursor.getString(customerCursor.getColumnIndexOrThrow("id"));
+                    customerId = customerCursor.getLong(customerCursor.getColumnIndexOrThrow("id"));
                     ContentValues customerValues = new ContentValues();
                     customerValues.put("address", address);
                     customerValues.put("updated_at", System.currentTimeMillis());
@@ -560,9 +686,9 @@ public class PaymentActivity extends AppCompatActivity {
                     db.update("customers", customerValues, "id = ?",
                             new String[]{String.valueOf(customerId)});
                 } else {
-                    // them customer neu chua co
+                    // thêm customer nếu chưa có
                     ContentValues customerValues = new ContentValues();
-                    customerId = String.valueOf(System.currentTimeMillis()); // Generate new ID
+                    customerId = System.currentTimeMillis(); // Generate new ID
                     customerValues.put("id", customerId);
                     customerValues.put("name", name);
                     customerValues.put("phone", customerDataManager.getCustomerPhone()); // Add phone
@@ -574,113 +700,179 @@ public class PaymentActivity extends AppCompatActivity {
                     customerValues.put("created_at", System.currentTimeMillis());
                     customerValues.put("updated_at", System.currentTimeMillis());
 
-                    db.insert("customers", null, customerValues);
-
+                    customerId = db.insert("customers", null, customerValues);
+                    if (customerId == -1) {
+                        throw new Exception("Failed to insert customer");
+                    }
                 }
                 customerCursor.close();
-                Random random = new Random();
-                long billId = random.nextInt(1_000_000);
+
+                // Tạo bill
+                long billId = System.currentTimeMillis(); // Dùng timestamp làm ID
 
                 ContentValues billValues = new ContentValues();
                 billValues.put("id", billId);
                 billValues.put("customer_id", customerId);
                 billValues.put("total_amount", totalPrice);
-                long result = db.insert("bills", null, billValues);
-                if (result == -1) {
-                    throw new Exception("Failed to insert bill");
+
+                // Thêm thông tin về voucher đã áp dụng - chỉ xử lý giảm 20% cho mã "HELLO"
+                int discountPercentage = 0;
+                if (isDiscountApplied) {
+                    discountPercentage = 20; // 20% cho mã HELLO
                 }
 
-                // tao bill va luu bill vao database
-                ContentValues detailValues = new ContentValues();
-                detailValues.put("bill_id", billId);
-                detailValues.put("phone_id", getPhoneIdByName(productName));
-                detailValues.put("quantity", quantity);
-                detailValues.put("unit_price", unitPrice);
-                result = db.insert("bill_details", null, detailValues);
-                if (result == -1) {
-                    throw new Exception("Failed to insert bill details");
+                // Ghi nhận thông tin giảm giá vào bill
+                try {
+                    billValues.put("discount_percentage", discountPercentage);
+                    android.util.Log.d("PaymentActivity", "Applied discount of " + discountPercentage + "% to bill: " + billId);
+                } catch (Exception e) {
+                    // Xử lý trường hợp cột discount_percentage chưa được thêm vào bảng
+                    android.util.Log.e("PaymentActivity", "Failed to save discount_percentage: " + e.getMessage());
                 }
 
-                //update profit
+                db.insert("bills", null, billValues);
+
+                if (!isMultipleItems || selectedCartItems.isEmpty()) {
+                    // Tạo chi tiết bill cho một sản phẩm
+                    ContentValues detailValues = new ContentValues();
+                    detailValues.put("bill_id", billId);
+                    detailValues.put("phone_id", getPhoneIdByName(productName));
+                    detailValues.put("quantity", quantity);
+                    detailValues.put("unit_price", unitPrice);
+                    db.insert("bill_details", null, detailValues);
+
+                    // Cập nhật số lượng stock cho sản phẩm đơn
+                    db.execSQL(
+                            "UPDATE phones SET stock_quantity = stock_quantity - ? WHERE phone_name = ?",
+                            new Object[]{quantity, productName}
+                    );
+                } else {
+                    // Xử lý đơn hàng nhiều sản phẩm từ selectedCartItems
+                    for (Cart.CartItem item : selectedCartItems) {
+                        // Thêm chi tiết bill cho từng sản phẩm
+                        ContentValues detailValues = new ContentValues();
+                        detailValues.put("bill_id", billId);
+                        detailValues.put("phone_id", getPhoneIdByName(item.phone.getPhoneName()));
+                        detailValues.put("quantity", item.quantity);
+                        detailValues.put("unit_price", item.phone.getPrice());
+                        db.insert("bill_details", null, detailValues);
+
+                        // Cập nhật số lượng stock cho từng sản phẩm
+                        db.execSQL(
+                                "UPDATE phones SET stock_quantity = stock_quantity - ? WHERE phone_name = ?",
+                                new Object[]{item.quantity, item.phone.getPhoneName()}
+                        );
+
+                        android.util.Log.d("PaymentActivity", "Processed order item: " + item.phone.getPhoneName() +
+                                ", quantity: " + item.quantity + ", price: " + item.phone.getPrice());
+                    }
+
+                    // Xóa chỉ các sản phẩm đã chọn khỏi giỏ hàng
+                    for (Cart.CartItem item : selectedCartItems) {
+                        Cart.getInstance(PaymentActivity.this).removeItem(item.phone);
+                    }
+                }
+
+                // Cập nhật thông tin lợi nhuận
                 Cursor profitCursor = db.query("profit", null, null, null,
                         null, null, null);
 
                 if (profitCursor.moveToFirst()) {
-                    // neu da co profit thi update
+                    // Nếu đã có profit thì update
                     int currentTotalSold = profitCursor.getInt(
                             profitCursor.getColumnIndexOrThrow("total_sold"));
                     double currentIncome = profitCursor.getDouble(
                             profitCursor.getColumnIndexOrThrow("income"));
 
                     ContentValues profitValues = new ContentValues();
-                    profitValues.put("total_sold", currentTotalSold + quantity);
+                    profitValues.put("total_sold", currentTotalSold + (isMultipleItems ? totalItems : quantity));
                     profitValues.put("income", currentIncome + totalPrice);
 
                     db.update("profit", profitValues, null, null);
                 } else {
-                    // neu khong thi tao profit moi
+                    // Nếu không thì tạo profit mới
                     ContentValues profitValues = new ContentValues();
-                    profitValues.put("total_sold", quantity);
+                    profitValues.put("total_sold", isMultipleItems ? totalItems : quantity);
                     profitValues.put("income", totalPrice);
 
                     db.insert("profit", null, profitValues);
                 }
                 profitCursor.close();
 
-                // update so luong dien thoai trong database
-                db.execSQL(
-                        "UPDATE phones SET stock_quantity = stock_quantity - ? WHERE phone_name = ?",
-                        new Object[]{quantity, productName}
-                );
-
-                // hoan thanh transaction
+                // Hoàn thành transaction
                 db.setTransactionSuccessful();
 
                 // Hiển thị hộp thoại xác nhận với thông tin đơn hàng đã cập nhật
-                new AlertDialog.Builder(this)
-                        .setTitle("Order Confirmation")
-                        .setMessage("Your order details:\n" +
-                                "  • Product: " + productName + "\n" +
-                                "  • Quantity: " + quantity + "\n" +
-                                "  • Price: " + formatPrice(unitPrice) + "\n" +
-                                "  • Voucher: " + (isDiscountApplied ? "-20%" : "0%") + "\n" +
-                                "  • Total Price: " + formatPrice(totalPrice) + "\n\n" +
-                                "Shipping Information:\n" +
-                                "  • Name: " + name + "\n" +
-                                "  • Address: " + address + "\n" +
-                                "  • Notes: " + notes + "\n\n" +
-                                "Your order has been placed successfully!")
-                        .setPositiveButton("View Profile", (dialog, which) -> {
-                            try {
-                                Intent profileIntent = new Intent(PaymentActivity.this, ProfileActivity.class);
-                                startActivity(profileIntent);
-                                finish();
-                            } catch (Exception e) {
-                                Toast.makeText(PaymentActivity.this, "Error navigating to profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        })
-                        .setNegativeButton("Back to Shopping", (dialog, which) -> {
-                            try {
-                                Intent intent = new Intent(PaymentActivity.this, com.example.mobilestore.ui.shopping.ShoppingActivity.class);
-                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                                startActivity(intent);
-
-                                // Hiển thị toast
-                                Toast.makeText(PaymentActivity.this, "Thank you for your order!", Toast.LENGTH_LONG).show();
-                            } catch (Exception e) {
-                                Toast.makeText(PaymentActivity.this, "Error returning to shop: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                finish();
-                            }
-                        })
-                        .setCancelable(false)
-                        .show();
-            }
-            finally {
+                showOrderConfirmationDialog(newOrder);
+            } finally {
                 db.endTransaction();
             }
         } catch (Exception e) {
             Toast.makeText(this, "Error placing order: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    // Add this new method to show the confirmation dialog
+    private void showOrderConfirmationDialog(Order order) {
+        StringBuilder orderDetails = new StringBuilder("Your order details:\n");
+
+        if (!order.hasMultipleItems()) {
+            // Chi tiết cho đơn hàng một sản phẩm
+            orderDetails.append("  • Product: ").append(order.getProductName()).append("\n");
+            orderDetails.append("  • Quantity: ").append(order.getQuantity()).append("\n");
+            orderDetails.append("  • Unit Price: ").append(order.getFormattedPrice(order.getUnitPrice())).append("\n");
+        } else {
+            // Chi tiết cho đơn hàng nhiều sản phẩm
+            orderDetails.append("  • Items ordered: ").append(order.getItemCount()).append("\n\n");
+            orderDetails.append("  • Products:\n");
+
+            for (Order.OrderItem item : order.getOrderItems()) {
+                orderDetails.append("      - ")
+                        .append(item.getProductName())
+                        .append(" (x").append(item.getQuantity()).append("): ")
+                        .append(order.getFormattedPrice(item.getTotalPrice()))
+                        .append("\n");
+            }
+            orderDetails.append("\n");
+        }
+
+        // Thêm thông tin chung
+        orderDetails.append("  • Voucher: ").append(order.isHasDiscount() ? "-20%" : "0%").append("\n");
+        orderDetails.append("  • Total Price: ").append(order.getFormattedPrice(order.getTotalPrice())).append("\n\n");
+        orderDetails.append("Shipping Information:\n");
+        orderDetails.append("  • Name: ").append(order.getCustomerName()).append("\n");
+        orderDetails.append("  • Address: ").append(order.getCustomerAddress()).append("\n");
+        orderDetails.append("  • Notes: ").append(order.getNotes()).append("\n\n");
+        orderDetails.append("Your order has been placed successfully!");
+
+        // Hiển thị hộp thoại xác nhận
+        new AlertDialog.Builder(this)
+                .setTitle("Order Confirmation")
+                .setMessage(orderDetails.toString())
+                .setPositiveButton("View Profile", (dialog, which) -> {
+                    try {
+                        Intent profileIntent = new Intent(PaymentActivity.this, ProfileActivity.class);
+                        startActivity(profileIntent);
+                        finish();
+                    } catch (Exception e) {
+                        Toast.makeText(PaymentActivity.this, "Error navigating to profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Back to Shopping", (dialog, which) -> {
+                    try {
+                        Intent intent = new Intent(PaymentActivity.this, com.example.mobilestore.ui.shopping.ShoppingActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        startActivity(intent);
+
+                        // Hiển thị toast
+                        Toast.makeText(PaymentActivity.this, "Thank you for your order!", Toast.LENGTH_LONG).show();
+                    } catch (Exception e) {
+                        Toast.makeText(PaymentActivity.this, "Error returning to shop: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                })
+                .setCancelable(false)
+                .show();
     }
 
     // Handle back button to return to product activity
@@ -705,5 +897,74 @@ public class PaymentActivity extends AppCompatActivity {
         }
         cursor.close();
         return phoneId;
+    }
+    private class OrderItemAdapter extends RecyclerView.Adapter<OrderItemAdapter.OrderItemViewHolder> {
+
+        private List<Cart.CartItem> items;
+
+        public OrderItemAdapter(List<Cart.CartItem> items) {
+            this.items = items;
+        }
+
+        @NonNull
+        @Override
+        public OrderItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(
+                    R.layout.item_payment, parent, false);  // Đã đổi thành item_payment.xml
+            return new OrderItemViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull OrderItemViewHolder holder, int position) {
+            Cart.CartItem item = items.get(position);
+
+            // Hiển thị tên sản phẩm
+            holder.tvPaymentItemName.setText(item.phone.getPhoneName());
+
+            // Hiển thị số lượng
+            holder.tvPaymentItemQuantity.setText(String.valueOf(item.quantity));
+
+            // Hiển thị giá
+            double itemPrice = item.phone.getPrice() * item.quantity;
+            holder.tvPaymentItemPrice.setText(formatPrice(itemPrice));
+
+            // Hiển thị ảnh sản phẩm dựa trên brand
+            try {
+                String brand = item.phone.getBrand().toLowerCase();
+                if (brand.contains("apple") || brand.contains("iphone")) {
+                    holder.imgPaymentItem.setImageResource(R.drawable.phone_sample);
+                } else if (brand.contains("samsung") || brand.contains("galaxy")) {
+                    holder.imgPaymentItem.setImageResource(R.drawable.samsung);
+                } else if (brand.contains("xiaomi") || brand.contains("redmi")) {
+                    holder.imgPaymentItem.setImageResource(R.drawable.redmi);
+                } else if (brand.contains("oppo")) {
+                    holder.imgPaymentItem.setImageResource(R.drawable.oppo);
+                } else {
+                    holder.imgPaymentItem.setImageResource(R.drawable.phone_sample);
+                }
+            } catch (Resources.NotFoundException e) {
+                // Sử dụng ảnh mặc định nếu không tìm thấy
+                holder.imgPaymentItem.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return items != null ? items.size() : 0;
+        }
+
+        class OrderItemViewHolder extends RecyclerView.ViewHolder {
+            ImageView imgPaymentItem;  // Đã đổi tên ID
+            TextView tvPaymentItemName, tvPaymentItemQuantity, tvPaymentItemPrice;  // Đã đổi tên ID
+
+            public OrderItemViewHolder(@NonNull View itemView) {
+                super(itemView);
+
+                imgPaymentItem = itemView.findViewById(R.id.imgPaymentItem);
+                tvPaymentItemName = itemView.findViewById(R.id.tvPaymentItemName);
+                tvPaymentItemQuantity = itemView.findViewById(R.id.tvPaymentItemQuantity);
+                tvPaymentItemPrice = itemView.findViewById(R.id.tvPaymentItemPrice);
+            }
+        }
     }
 }

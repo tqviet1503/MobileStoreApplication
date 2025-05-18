@@ -64,6 +64,11 @@
             android:exported="false"
             android:label="Order History" />
 
+        <activity
+            android:name=".ui.cart.CartActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
     </application>
 
 </manifest>

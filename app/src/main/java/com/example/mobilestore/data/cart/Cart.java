@@ -18,6 +18,8 @@ public class Cart {
     private static final String PREF_NAME = "cart_preferences";
     private static Cart instance;
     private final Map<String, CartItem> items = new HashMap<>();
+    // Map lưu trữ trạng thái chọn của mỗi sản phẩm
+    private final Map<String, Boolean> selectedItems = new HashMap<>();
     private Context context;
     private ProductRepository repository;
 
@@ -62,6 +64,8 @@ public class Cart {
         } else {
             // Add new item
             items.put(phoneId, new CartItem(phone, quantity));
+            // Mặc định mọi sản phẩm đều được chọn khi thêm vào giỏ hàng
+            selectedItems.put(phoneId, true);
         }
 
         // Save changes
@@ -89,8 +93,17 @@ public class Cart {
 
         if (items.containsKey(phoneId)) {
             items.remove(phoneId);
+            selectedItems.remove(phoneId);
             saveCartToPreferences();
         }
+    }
+
+    /**
+     * Remove an item from cart using phone object
+     */
+    public void removeItem(Phone phone) {
+        if (phone == null) return;
+        removeItem(phone.getId());
     }
 
     /**
@@ -130,6 +143,90 @@ public class Cart {
     }
 
     /**
+     * Get total price of selected items only
+     */
+    public double getSelectedItemsPrice() {
+        double total = 0;
+        for (Map.Entry<String, CartItem> entry : items.entrySet()) {
+            String phoneId = entry.getKey();
+            // Chỉ tính tổng cho những sản phẩm được chọn
+            if (isItemSelected(phoneId)) {
+                total += entry.getValue().getTotalPrice();
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Get number of selected items
+     */
+    public int getSelectedItemCount() {
+        int count = 0;
+        for (Map.Entry<String, Boolean> entry : selectedItems.entrySet()) {
+            if (entry.getValue() && items.containsKey(entry.getKey())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Get total quantity of selected items
+     */
+    public int getSelectedQuantity() {
+        int total = 0;
+        for (Map.Entry<String, CartItem> entry : items.entrySet()) {
+            String phoneId = entry.getKey();
+            // Chỉ tính cho những sản phẩm được chọn
+            if (isItemSelected(phoneId)) {
+                total += entry.getValue().quantity;
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Check if a specific item is selected
+     */
+    public boolean isItemSelected(String phoneId) {
+        return selectedItems.containsKey(phoneId) && selectedItems.get(phoneId);
+    }
+
+    /**
+     * Set selection state for a specific item
+     */
+    public void setItemSelected(String phoneId, boolean selected) {
+        if (items.containsKey(phoneId)) {
+            selectedItems.put(phoneId, selected);
+            saveCartToPreferences();
+        }
+    }
+
+    /**
+     * Set selection state for all items
+     */
+    public void selectAllItems(boolean selected) {
+        for (String phoneId : items.keySet()) {
+            selectedItems.put(phoneId, selected);
+        }
+        saveCartToPreferences();
+    }
+
+    /**
+     * Get list of selected cart items
+     */
+    public List<CartItem> getSelectedItems() {
+        List<CartItem> selected = new ArrayList<>();
+        for (Map.Entry<String, CartItem> entry : items.entrySet()) {
+            String phoneId = entry.getKey();
+            if (isItemSelected(phoneId)) {
+                selected.add(entry.getValue());
+            }
+        }
+        return selected;
+    }
+
+    /**
      * Check if cart is empty
      */
     public boolean isEmpty() {
@@ -141,6 +238,7 @@ public class Cart {
      */
     public void clear() {
         items.clear();
+        selectedItems.clear();
         saveCartToPreferences();
     }
 
@@ -165,6 +263,8 @@ public class Cart {
 
             editor.putString("item_" + index + "_id", phoneId);
             editor.putInt("item_" + index + "_quantity", item.quantity);
+            // Lưu trạng thái chọn của sản phẩm
+            editor.putBoolean("item_" + index + "_selected", isItemSelected(phoneId));
             index++;
         }
 
@@ -179,6 +279,7 @@ public class Cart {
 
         // Clear existing data
         items.clear();
+        selectedItems.clear();
 
         // Get the number of items
         int itemCount = preferences.getInt("item_count", 0);
@@ -187,12 +288,14 @@ public class Cart {
         for (int i = 0; i < itemCount; i++) {
             String phoneId = preferences.getString("item_" + i + "_id", "");
             int quantity = preferences.getInt("item_" + i + "_quantity", 0);
+            boolean isSelected = preferences.getBoolean("item_" + i + "_selected", true);
 
             if (!phoneId.isEmpty() && quantity > 0) {
                 // Find phone by ID
                 Phone phone = repository.findPhoneByName(phoneId);
                 if (phone != null) {
                     items.put(phoneId, new CartItem(phone, quantity));
+                    selectedItems.put(phoneId, isSelected);
                 }
             }
         }

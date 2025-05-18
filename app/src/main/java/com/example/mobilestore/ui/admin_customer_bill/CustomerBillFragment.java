@@ -104,6 +104,5 @@ public class CustomerBillFragment extends Fragment implements BrandAdapter.OnBra
 
     @Override
     public void onAddPhoneClick(Brand brand) {
-        // Xử lý khi click vào nút "Add Phone"
     }
 }
