@@ -16,9 +16,9 @@
 
         <ImageView
             android:id="@+id/brand_logo"
-            android:layout_width="30dp"
+            android:layout_width="21dp"
             android:layout_height="30dp"
-            android:scaleType="centerCrop"/>
+            android:scaleType="centerCrop" />
 
         <LinearLayout
             android:id="@+id/brand_phone"

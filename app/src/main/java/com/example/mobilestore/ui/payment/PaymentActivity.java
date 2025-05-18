@@ -594,6 +594,7 @@ public class PaymentActivity extends AppCompatActivity {
                 ContentValues detailValues = new ContentValues();
                 detailValues.put("bill_id", billId);
                 detailValues.put("phone_id", getPhoneIdByName(productName));
+                detailValues.put("phone_name", productName);
                 detailValues.put("quantity", quantity);
                 detailValues.put("unit_price", unitPrice);
                 result = db.insert("bill_details", null, detailValues);

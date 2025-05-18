@@ -34,6 +34,7 @@ public class ReportFragment extends Fragment implements ProductRepository.OnData
         super.onCreate(savedInstanceState);
         repository = ProductRepository.getInstance(requireContext());
         repository.addListener(this);
+        updateValues();
     }
 
     @Override
@@ -59,6 +60,11 @@ public class ReportFragment extends Fragment implements ProductRepository.OnData
 
     @Override
     public void onBrandAdded(Brand brand) {
+        updateValues();
+    }
+
+    @Override
+    public void onDataChanged() {
         updateValues();
     }
 

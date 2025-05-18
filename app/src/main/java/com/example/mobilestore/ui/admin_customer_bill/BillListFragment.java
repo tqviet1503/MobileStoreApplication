@@ -52,18 +52,16 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
     private void showBillDetailsDialog(BillDetails bill) {
         SQLiteDatabase db = repository.db;
 
-        // Debug log
         Log.d("BillDetails", "Showing dialog for bill_id: " + bill.getBillId());
 
         try {
             Cursor cursor = db.rawQuery(
                     "SELECT b.id, b.total_amount, b.created_at, " +
                             "c.name as customer_name, c.phone as customer_phone, c.address as customer_address, " +
-                            "p.phone_name, bd.quantity, bd.unit_price " +
+                            "bd.phone_name, bd.quantity, bd.unit_price " +
                             "FROM bills b " +
                             "INNER JOIN bill_details bd ON b.id = bd.bill_id " +
                             "INNER JOIN customers c ON b.customer_id = c.id " +
-                            "INNER JOIN phones p ON bd.phone_id = p.id " +
                             "WHERE b.id = ? AND bd.id = ?",
                     new String[]{
                             String.valueOf(bill.getBillId()),
@@ -72,7 +70,6 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
             );
 
             if (cursor != null && cursor.moveToFirst()) {
-                // Debug log
                 Log.d("BillDetails", "Found bill data");
 
                 View dialogView = LayoutInflater.from(requireContext())

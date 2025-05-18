@@ -56,8 +56,6 @@ public class Navigation {
                 targetActivity = StorageActivity.class;
             } else if (itemId == R.id.navigation_customer) {
                 targetActivity = CustomerBillActivity.class;
-            } else if (itemId == R.id.navigation_product) {
-                targetActivity = ProductActivity.class;
             }
 
             if (targetActivity != null) {
