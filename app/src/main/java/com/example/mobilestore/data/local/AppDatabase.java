@@ -55,7 +55,7 @@ public class AppDatabase extends SQLiteOpenHelper {
         // Customers table
         db.execSQL(
                 "CREATE TABLE customers (" +
-                        "id TEXT," +
+                        "id TEXT PRIMARY KEY," +
                         "name TEXT NOT NULL," +
                         "phone TEXT NOT NULL," +
                         "email TEXT," +
@@ -72,7 +72,7 @@ public class AppDatabase extends SQLiteOpenHelper {
         db.execSQL(
                 "CREATE TABLE bills (" +
                         "id INTEGER PRIMARY KEY," +
-                        "customer_id TEXT," +
+                        "customer_id TEXT NOT NULL," +
                         "total_amount REAL NOT NULL," +
                         "discount_percentage INTEGER DEFAULT 0," + // discount_percentage
                         "created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +

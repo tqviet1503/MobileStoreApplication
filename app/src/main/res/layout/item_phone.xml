@@ -25,6 +25,14 @@
                 android:src="@drawable/phone_sample"
                 android:background="#F5F5F5" />
 
+            <!-- Lớp phủ mờ cho sản phẩm hết hàng -->
+            <View
+                android:id="@+id/overlayView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#80000000"
+                android:visibility="gone" />
+
             <ImageButton
                 android:id="@+id/btnFavorite"
                 android:layout_width="36dp"
@@ -36,7 +44,7 @@
                 android:elevation="2dp"
                 android:padding="8dp" />
 
-            <!-- Badge for New or Special Offers -->
+            <!-- Badge for New, Hot or Sold Out -->
             <TextView
                 android:id="@+id/tvBadge"
                 android:layout_width="wrap_content"
@@ -48,10 +56,26 @@
                 android:paddingTop="4dp"
                 android:paddingEnd="8dp"
                 android:paddingBottom="4dp"
-                android:text="Hot"
+                android:text="NEW"
                 android:textColor="#FFFFFF"
                 android:textSize="12sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:visibility="visible" />
+
+            <!-- SOLD OUT -->
+            <TextView
+                android:id="@+id/tvSoldOutOverlay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:background="#80FF0000"
+                android:padding="8dp"
+                android:rotation="-15"
+                android:text="SOLD OUT"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
         </RelativeLayout>
 
         <!-- Product Info -->
@@ -111,6 +135,17 @@
                     android:textColor="#757575"
                     android:textSize="12sp" />
             </LinearLayout>
+
+            <!-- Stock Indicator -->
+            <TextView
+                android:id="@+id/tvStockStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="In Stock"
+                android:textColor="#4CAF50"
+                android:textSize="12sp"
+                android:visibility="visible" />
 
             <!-- Price and Add to Cart -->
             <RelativeLayout

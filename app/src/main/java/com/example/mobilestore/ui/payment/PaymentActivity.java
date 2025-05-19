@@ -104,7 +104,7 @@ public class PaymentActivity extends AppCompatActivity {
 
     private void calculateTotalPrice() {
         // Nếu đến từ giỏ hàng với nhiều sản phẩm và đã có tổng giá, không cần tính lại
-        if (isMultipleItems && totalItems > 1 && totalPrice > 0) {
+        if (isMultipleItems && totalPrice > 0) {
             // Giá đã được đặt trong getDataFromIntent()
             android.util.Log.d("PaymentActivity", "Using cart total price: " + totalPrice);
         } else {

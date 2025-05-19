@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import android.annotation.SuppressLint;
 
 public class BillListFragment extends Fragment implements BillAdapter.OnBillClickListener {
     private static final String TAG = "BillListFragment";
@@ -38,6 +39,7 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.admin_bill_list, container, false);
         repository = ProductRepository.getInstance(requireContext());
+        checkDatabaseStructure();
         recyclerView = view.findViewById(R.id.recycler_view_bill);
         setupRecyclerView();
         return view;
@@ -78,22 +80,206 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
             showSimpleBillDetailsDialog(bill);
         }
     }
+    @SuppressLint("Range")
+    private void checkDatabaseStructure() {
+        SQLiteDatabase db = repository.db;
+
+        Log.d(TAG, "Checking bills and customers:");
+
+        // Check the first 2 bills
+        Cursor billsCursor = db.rawQuery(
+                "SELECT id, customer_id FROM bills ORDER BY id ASC LIMIT 2", null);
+
+        int count = 0;
+        while (billsCursor.moveToNext()) {
+            count++;
+            long billId = billsCursor.getLong(billsCursor.getColumnIndex("id"));
+            String customerId = billsCursor.isNull(billsCursor.getColumnIndex("customer_id")) ?
+                    "NULL" : billsCursor.getString(billsCursor.getColumnIndex("customer_id"));
+
+            Log.d(TAG, "Bill #" + count + " - ID: " + billId + ", customer_id: " + customerId);
+
+            // If there is a customer_id, check if the customer is found
+            if (!"NULL".equals(customerId)) {
+                Cursor customerCursor = db.rawQuery(
+                        "SELECT id, name FROM customers WHERE id = ?",
+                        new String[]{customerId});
+
+                if (customerCursor.moveToFirst()) {
+                    String customerName = customerCursor.getString(customerCursor.getColumnIndex("name"));
+                    Log.d(TAG, "  → Found customer: " + customerName);
+                } else {
+                    Log.d(TAG, "  → COULD NOT find customer with ID: " + customerId);
+                }
+                customerCursor.close();
+            }
+        }
+        billsCursor.close();
+
+        // Check the structure of the bills table
+        Cursor billsSchema = db.rawQuery("PRAGMA table_info(bills)", null);
+        Log.d(TAG, "Structure of the bills table:");
+        while (billsSchema.moveToNext()) {
+            String name = billsSchema.getString(billsSchema.getColumnIndex("name"));
+            String type = billsSchema.getString(billsSchema.getColumnIndex("type"));
+            Log.d(TAG, "  - " + name + ": " + type);
+        }
+        billsSchema.close();
+
+        // Check the structure of the customers table
+        Cursor customersSchema = db.rawQuery("PRAGMA table_info(customers)", null);
+        Log.d(TAG, "Structure of the customers table:");
+        while (customersSchema.moveToNext()) {
+            String name = customersSchema.getString(customersSchema.getColumnIndex("name"));
+            String type = customersSchema.getString(customersSchema.getColumnIndex("type"));
+            Log.d(TAG, "  - " + name + ": " + type);
+        }
+        customersSchema.close();
+    }
+
+    /**
+     * Lấy thông tin khách hàng từ database, sử dụng LEFT JOIN để đảm bảo
+     * luôn trả về dữ liệu bill ngay cả khi không tìm thấy khách hàng
+     * @param billId ID của bill cần lấy thông tin
+     * @return Map chứa thông tin khách hàng (name, phone, address)
+     */
+    @SuppressLint("Range")
+    private Map<String, String> getCustomerInfo(long billId) {
+        Map<String, String> customerInfo = new HashMap<>();
+        customerInfo.put("name", "Walk-in Customer");
+        customerInfo.put("phone", "-");
+        customerInfo.put("address", "-");
+
+        SQLiteDatabase db = repository.db;
+        Cursor cursor = null;
+
+        try {
+            // Step 1: Check if the bill exists and has a customer_id
+            Cursor billCheckCursor = db.rawQuery(
+                    "SELECT customer_id FROM bills WHERE id = ? LIMIT 1",
+                    new String[]{String.valueOf(billId)}
+            );
+
+            String customerId = null;
+            if (billCheckCursor.moveToFirst()) {
+                int customerIdIndex = billCheckCursor.getColumnIndex("customer_id");
+                if (customerIdIndex != -1 && !billCheckCursor.isNull(customerIdIndex)) {
+                    customerId = billCheckCursor.getString(customerIdIndex);
+                    Log.d(TAG, "Bill " + billId + " has customer_id: " + customerId);
+                } else {
+                    Log.d(TAG, "Bill " + billId + " has a NULL customer_id");
+                }
+            }
+            billCheckCursor.close();
+
+            // Step 2: If there is a customer_id, try different ways to find the customer
+            if (customerId != null) {
+                // Method 1: Search by exact match
+                cursor = db.rawQuery(
+                        "SELECT name, phone, address FROM customers WHERE id = ? LIMIT 1",
+                        new String[]{customerId}
+                );
+
+                // If not found, try searching with LIKE
+                if (!cursor.moveToFirst()) {
+                    cursor.close();
+                    cursor = db.rawQuery(
+                            "SELECT name, phone, address FROM customers WHERE id LIKE ? LIMIT 1",
+                            new String[]{"%" + customerId + "%"}
+                    );
+                }
+
+                // If still not found and customerId is numeric, try searching in different formats
+                if (!cursor.moveToFirst() && isNumeric(customerId)) {
+                    cursor.close();
+
+                    // Try searching with id = "CUST_X" or other common formats
+                    cursor = db.rawQuery(
+                            "SELECT name, phone, address FROM customers WHERE id LIKE ? OR id LIKE ? LIMIT 1",
+                            new String[]{"CUST_" + customerId + "%", "KH_" + customerId + "%"}
+                    );
+                }
+
+                // If found, get the customer information
+                if (cursor.moveToFirst()) {
+                    customerInfo.put("name", cursor.getString(cursor.getColumnIndex("name")));
+                    customerInfo.put("phone", cursor.getString(cursor.getColumnIndex("phone")));
+                    customerInfo.put("address", cursor.getString(cursor.getColumnIndex("address")));
+                    Log.d(TAG, "Found customer information: " + customerInfo.get("name"));
+                } else {
+                    Log.d(TAG, "No customer found with ID: " + customerId);
+                }
+            }
+
+            // Step 3: Get the discount information from the bills table
+            Cursor discountCursor = db.rawQuery(
+                    "SELECT discount_percentage FROM bills WHERE id = ? LIMIT 1",
+                    new String[]{String.valueOf(billId)}
+            );
+
+            if (discountCursor.moveToFirst()) {
+                int discountIndex = discountCursor.getColumnIndex("discount_percentage");
+                if (discountIndex != -1 && !discountCursor.isNull(discountIndex)) {
+                    customerInfo.put("discount_percentage", String.valueOf(discountCursor.getInt(discountIndex)));
+                } else {
+                    customerInfo.put("discount_percentage", "0");
+                }
+            }
+            discountCursor.close();
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting customer information: " + e.getMessage(), e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return customerInfo;
+    }
+
+    // Method to check if a string is numeric
+    private boolean isNumeric(String str) {
+        try {
+            Long.parseLong(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
 
     private void showSimpleBillDetailsDialog(BillDetails bill) {
-        SQLiteDatabase db = repository.db;
-        // Lấy thông tin chi tiết của bill dựa trên bill.getBillId()
-        Cursor cursor = db.rawQuery(
-                "SELECT b.*, c.name as customer_name, c.phone as customer_phone, " +
-                        "c.address as customer_address, p.phone_name " +
-                        "FROM bills b " +
-                        "INNER JOIN customers c ON b.customer_id = c.id " +
-                        "INNER JOIN bill_details bd ON b.id = bd.bill_id " +
-                        "INNER JOIN phones p ON bd.phone_id = p.id " +
-                        "WHERE b.id = ? LIMIT 1",
-                new String[]{String.valueOf(bill.getBillId())}
-        );
+        try {
+            SQLiteDatabase db = repository.db;
 
-        if (cursor.moveToFirst()) {
+            // Lấy thông tin khách hàng bằng phương thức chung
+            Map<String, String> customerInfo = getCustomerInfo(bill.getBillId());
+
+            // Lấy thông tin chi tiết sản phẩm
+            Cursor productCursor = null;
+            String phoneName = "Unknown product";
+
+            try {
+                productCursor = db.rawQuery(
+                        "SELECT bd.*, p.phone_name " +
+                                "FROM bill_details bd " +
+                                "INNER JOIN phones p ON bd.phone_id = p.id " +
+                                "WHERE bd.bill_id = ? LIMIT 1",
+                        new String[]{String.valueOf(bill.getBillId())}
+                );
+
+                if (productCursor.moveToFirst()) {
+                    phoneName = productCursor.getString(productCursor.getColumnIndexOrThrow("phone_name"));
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error getting product info: " + e.getMessage(), e);
+            } finally {
+                if (productCursor != null) {
+                    productCursor.close();
+                }
+            }
+
             View dialogView = LayoutInflater.from(getContext())
                     .inflate(R.layout.bill_details_dialog, null);
 
@@ -107,9 +293,8 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
             // Format bill ID to be shorter and more readable
             String formattedBillId = formatBillId(bill.getBillId());
 
-            // Get corrected timestamp and format it
-            long dateMillis = getTimestampFromCursor(cursor, "created_at");
-            String formattedDate = formatTimestamp(dateMillis);
+            // Get timestamp from bill object and format it
+            String formattedDate = bill.getFormattedDate();
 
             billIdText.setText("Bill " + formattedBillId);
 
@@ -117,12 +302,19 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
                 billDateText.setText("Date: " + formattedDate);
             }
 
-            customerText.setText(String.format("Customer: %s\nPhone: %s\nAddress: %s",
-                    cursor.getString(cursor.getColumnIndexOrThrow("customer_name")),
-                    cursor.getString(cursor.getColumnIndexOrThrow("customer_phone")),
-                    cursor.getString(cursor.getColumnIndexOrThrow("customer_address"))
-            ));
-            phoneText.setText("Product: " + cursor.getString(cursor.getColumnIndexOrThrow("phone_name")));
+            // Hiển thị thông tin khách hàng từ Map
+            String customerName = customerInfo.get("name");
+            String customerPhone = customerInfo.get("phone");
+            String customerAddress = customerInfo.get("address");
+
+            if ("Guest".equals(customerName) && "-".equals(customerPhone)) {
+                customerText.setText("Guest Customer (No Details Available)");
+            } else {
+                customerText.setText(String.format("Customer: %s\nPhone: %s\nAddress: %s",
+                        customerName, customerPhone, customerAddress));
+            }
+
+            phoneText.setText("Product: " + phoneName);
             quantityText.setText("Quantity: " + bill.getQuantity());
 
             // Tính lại tổng tiền từ các mặt hàng
@@ -131,20 +323,31 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
                 calculatedTotal += item.getUnitPrice() * item.getQuantity();
             }
 
-            double dbTotal = cursor.getDouble(cursor.getColumnIndexOrThrow("total_amount"));
+            // Áp dụng giảm giá nếu có
+            if (customerInfo.containsKey("discount_percentage")) {
+                int discountPercentage = Integer.parseInt(customerInfo.get("discount_percentage"));
+                if (discountPercentage > 0) {
+                    bill.setDiscountPercentage(discountPercentage);
+                }
+            }
 
-            // Use the calculated total if it seems more accurate
-            double finalTotal = (calculatedTotal > 0 && Math.abs(calculatedTotal - dbTotal) > 1000)
-                    ? calculatedTotal : dbTotal;
-
+            // Sử dụng getTotalAmount() của bill để lấy giá đã tính giảm giá
+            double finalTotal = bill.hasDiscount() ? bill.getTotalAmount() : calculatedTotal;
             totalText.setText(String.format(Locale.getDefault(), "Total Price: %,.0fđ", finalTotal));
 
             new AlertDialog.Builder(requireContext())
                     .setView(dialogView)
                     .setPositiveButton("Close", null)
                     .show();
+        } catch (Exception e) {
+            Log.e(TAG, "Error in showSimpleBillDetailsDialog: " + e.getMessage(), e);
+            // Hiển thị một dialog lỗi đơn giản
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Error")
+                    .setMessage("Could not load bill details.")
+                    .setPositiveButton("OK", null)
+                    .show();
         }
-        cursor.close();
     }
 
     /**
@@ -237,159 +440,129 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
                 Log.e(TAG, "Bill items list is null or empty for bill ID: " + bill.getBillId());
             }
 
-            Cursor cursor = null;
-            try {
-                // Get bill details for a single item bill
-                cursor = db.rawQuery(
-                        "SELECT b.*, c.name as customer_name, c.phone as customer_phone, " +
-                                "c.address as customer_address, p.phone_name, " +
-                                "b.created_at as bill_date, b.discount_percentage " +
-                                "FROM bills b " +
-                                "INNER JOIN customers c ON b.customer_id = c.id " +
-                                "INNER JOIN bill_details bd ON b.id = bd.bill_id " +
-                                "INNER JOIN phones p ON bd.phone_id = p.id " +
-                                "WHERE b.id = ? LIMIT 1",
-                        new String[]{String.valueOf(bill.getBillId())}
-                );
+            // Lấy thông tin khách hàng bằng phương thức chung
+            Map<String, String> customerInfo = getCustomerInfo(bill.getBillId());
 
-                Log.d(TAG, "SQL query executed for bill ID: " + bill.getBillId() +
-                        ", has results: " + (cursor != null && cursor.moveToFirst()));
+            // Lấy thông tin sản phẩm
+            BillDetails.BillItem item = bill.getItems().isEmpty() ? null : bill.getItems().get(0);
+            String phoneName = (item != null) ? item.getPhoneName() : "Unknown product";
 
-                if (cursor != null && cursor.moveToFirst()) {
-                    View dialogView = LayoutInflater.from(getContext())
-                            .inflate(R.layout.bill_details_dialog, null);
-
-                    if (dialogView == null) {
-                        Log.e(TAG, "Failed to inflate layout bill_details_dialog");
-                        return;
-                    }
-
-                    TextView billIdText = dialogView.findViewById(R.id.text_bill_id);
-                    TextView billDateText = dialogView.findViewById(R.id.text_bill_date);
-                    TextView customerText = dialogView.findViewById(R.id.text_customer_info);
-                    TextView phoneText = dialogView.findViewById(R.id.text_phone_info);
-                    TextView quantityText = dialogView.findViewById(R.id.text_quantity);
-                    TextView totalText = dialogView.findViewById(R.id.text_total_amount);
-                    TextView discountText = dialogView.findViewById(R.id.text_discount);
-
-                    Log.d(TAG, "Found views: billIdText=" + (billIdText != null) +
-                            ", discountText=" + (discountText != null) +
-                            ", totalText=" + (totalText != null));
-
-                    // Format bill ID to be shorter and more readable
-                    String formattedBillId = formatBillId(bill.getBillId());
-
-                    // Get corrected timestamp and format it
-                    long dateMillis = getTimestampFromCursor(cursor, "bill_date");
-                    String formattedDate = formatTimestamp(dateMillis);
-
-                    // Set UI fields
-                    if (billIdText != null) {
-                        billIdText.setText("Bill " + formattedBillId);
-                    }
-
-                    if (billDateText != null) {
-                        billDateText.setText("Date: " + formattedDate);
-                    }
-
-                    if (customerText != null) {
-                        customerText.setText(String.format("Customer: %s\nPhone: %s\nAddress: %s",
-                                cursor.getString(cursor.getColumnIndexOrThrow("customer_name")),
-                                cursor.getString(cursor.getColumnIndexOrThrow("customer_phone")),
-                                cursor.getString(cursor.getColumnIndexOrThrow("customer_address"))
-                        ));
-                    }
-
-                    if (phoneText != null) {
-                        phoneText.setText("Product: " + cursor.getString(cursor.getColumnIndexOrThrow("phone_name")));
-                    }
-
-                    if (quantityText != null) {
-                        quantityText.setText("Quantity: " + bill.getQuantity());
-                    }
-
-                    // Lấy thông tin về voucher từ cursor
-                    int discountPercentage = 0;
-                    int discountColumnIndex = cursor.getColumnIndex("discount_percentage");
-                    if (discountColumnIndex != -1) {
-                        discountPercentage = cursor.getInt(discountColumnIndex);
-                        // Cập nhật discount percentage cho bill
-                        bill.setDiscountPercentage(discountPercentage);
-                        Log.d(TAG, "Found discount: " + discountPercentage + "% for bill ID: " + bill.getBillId());
-                    } else {
-                        Log.w(TAG, "Column 'discount_percentage' not found in cursor");
-                    }
-
-                    // Calculate subtotal - giá trước khi giảm giá
-                    double subtotal = 0;
-                    if (bill.getItems() != null) {
-                        for (BillDetails.BillItem item : bill.getItems()) {
-                            subtotal += item.getUnitPrice() * item.getQuantity();
-                        }
-                    }
-                    Log.d(TAG, "Calculated subtotal: " + subtotal);
-
-                    double dbTotal = cursor.getDouble(cursor.getColumnIndexOrThrow("total_amount"));
-                    Log.d(TAG, "DB total: " + dbTotal);
-
-                    // Hiển thị thông tin giảm giá
-                    if (discountText != null) {
-                        if (bill.hasDiscount()) {
-                            discountText.setVisibility(View.VISIBLE);
-                            discountText.setText(String.format("Discount: %s (-%s)",
-                                    bill.getFormattedDiscount(),
-                                    String.format(Locale.getDefault(), "%,.0fđ", bill.getDiscountAmount())));
-                            discountText.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_green_dark));
-                            Log.d(TAG, "Displaying discount: " + bill.getFormattedDiscount());
-                        } else {
-                            discountText.setVisibility(View.GONE);
-                            Log.d(TAG, "No discount to display");
-                        }
-                    } else {
-                        Log.w(TAG, "discountText view not found in layout");
-                    }
-
-                    // Sử dụng getTotalAmount() của bill để lấy giá đã tính giảm giá
-                    double finalTotal;
-                    if (bill.hasDiscount() && totalText != null) {
-                        // Nếu có giảm giá, hiển thị tổng giá với thông tin giảm giá
-                        finalTotal = bill.getTotalAmount();
-                        Log.d(TAG, "Using discounted total: " + finalTotal);
-
-                        // Hiển thị cả giá gốc và giá sau giảm giá
-                        totalText.setText(String.format(Locale.getDefault(),
-                                "Original Price: %,.0fđ\nTotal Price: %,.0fđ",
-                                subtotal, finalTotal));
-                    } else if (totalText != null) {
-                        // Nếu không có giảm giá, sử dụng logic cũ để lấy giá
-                        finalTotal = (subtotal > 0 && Math.abs(subtotal - dbTotal) > 1000)
-                                ? subtotal : dbTotal;
-                        Log.d(TAG, "Using normal total: " + finalTotal);
-
-                        totalText.setText(String.format(Locale.getDefault(),
-                                "Total Price: %,.0fđ", finalTotal));
-                    } else {
-                        Log.w(TAG, "totalText view not found in layout");
-                    }
-
-                    // Show dialog
-                    new AlertDialog.Builder(requireContext())
-                            .setView(dialogView)
-                            .setPositiveButton("Close", null)
-                            .show();
-                    Log.d(TAG, "Dialog shown successfully");
-                } else {
-                    Log.e(TAG, "No data found for bill ID: " + bill.getBillId() + " - Showing simple dialog instead");
-                    showSimpleBillDetailsDialog(bill);
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error in SQL query: " + e.getMessage(), e);
-                showSimpleBillDetailsDialog(bill);
-            } finally {
-                if (cursor != null) {
-                    cursor.close();
+            // Áp dụng discount từ thông tin khách hàng
+            if (customerInfo.containsKey("discount_percentage")) {
+                int discountPercentage = Integer.parseInt(customerInfo.get("discount_percentage"));
+                if (discountPercentage > 0) {
+                    bill.setDiscountPercentage(discountPercentage);
+                    Log.d(TAG, "Applied discount " + discountPercentage + "% from customer info");
                 }
             }
+
+            View dialogView = LayoutInflater.from(getContext())
+                    .inflate(R.layout.bill_details_dialog, null);
+
+            if (dialogView == null) {
+                Log.e(TAG, "Failed to inflate layout bill_details_dialog");
+                showSimpleBillDetailsDialog(bill);
+                return;
+            }
+
+            TextView billIdText = dialogView.findViewById(R.id.text_bill_id);
+            TextView billDateText = dialogView.findViewById(R.id.text_bill_date);
+            TextView customerText = dialogView.findViewById(R.id.text_customer_info);
+            TextView phoneText = dialogView.findViewById(R.id.text_phone_info);
+            TextView quantityText = dialogView.findViewById(R.id.text_quantity);
+            TextView totalText = dialogView.findViewById(R.id.text_total_amount);
+            TextView discountText = dialogView.findViewById(R.id.text_discount);
+
+            Log.d(TAG, "Found views: billIdText=" + (billIdText != null) +
+                    ", discountText=" + (discountText != null) +
+                    ", totalText=" + (totalText != null));
+
+            // Format bill ID to be shorter and more readable
+            String formattedBillId = formatBillId(bill.getBillId());
+
+            // Get timestamp from bill object and format it
+            String formattedDate = bill.getFormattedDate();
+
+            // Set UI fields
+            if (billIdText != null) {
+                billIdText.setText("Bill " + formattedBillId);
+            }
+
+            if (billDateText != null) {
+                billDateText.setText("Date: " + formattedDate);
+            }
+
+            if (customerText != null) {
+                customerText.setText(String.format("Customer: %s\nPhone: %s\nAddress: %s",
+                        customerInfo.get("name"),
+                        customerInfo.get("phone"),
+                        customerInfo.get("address")
+                ));
+            }
+
+            if (phoneText != null) {
+                phoneText.setText("Product: " + phoneName);
+            }
+
+            if (quantityText != null) {
+                quantityText.setText("Quantity: " + bill.getQuantity());
+            }
+
+            // Calculate subtotal - giá trước khi giảm giá
+            double subtotal = 0;
+            if (bill.getItems() != null) {
+                for (BillDetails.BillItem billItem : bill.getItems()) {
+                    subtotal += billItem.getUnitPrice() * billItem.getQuantity();
+                }
+            }
+            Log.d(TAG, "Calculated subtotal: " + subtotal);
+
+            // Hiển thị thông tin giảm giá
+            if (discountText != null) {
+                if (bill.hasDiscount()) {
+                    discountText.setVisibility(View.VISIBLE);
+                    discountText.setText(String.format("Discount: %s (-%s)",
+                            bill.getFormattedDiscount(),
+                            String.format(Locale.getDefault(), "%,.0fđ", bill.getDiscountAmount())));
+                    discountText.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_green_dark));
+                    Log.d(TAG, "Displaying discount: " + bill.getFormattedDiscount());
+                } else {
+                    discountText.setVisibility(View.GONE);
+                    Log.d(TAG, "No discount to display");
+                }
+            } else {
+                Log.w(TAG, "discountText view not found in layout");
+            }
+
+            // Sử dụng getTotalAmount() của bill để lấy giá đã tính giảm giá
+            double finalTotal;
+            if (bill.hasDiscount() && totalText != null) {
+                // Nếu có giảm giá, hiển thị tổng giá với thông tin giảm giá
+                finalTotal = bill.getTotalAmount();
+                Log.d(TAG, "Using discounted total: " + finalTotal);
+
+                // Hiển thị cả giá gốc và giá sau giảm giá
+                totalText.setText(String.format(Locale.getDefault(),
+                        "Original Price: %,.0fđ\nTotal Price: %,.0fđ",
+                        subtotal, finalTotal));
+            } else if (totalText != null) {
+                // Nếu không có giảm giá, hiển thị giá gốc
+                finalTotal = subtotal;
+                Log.d(TAG, "Using normal total: " + finalTotal);
+
+                totalText.setText(String.format(Locale.getDefault(),
+                        "Total Price: %,.0fđ", finalTotal));
+            } else {
+                Log.w(TAG, "totalText view not found in layout");
+            }
+
+            // Show dialog
+            new AlertDialog.Builder(requireContext())
+                    .setView(dialogView)
+                    .setPositiveButton("Close", null)
+                    .show();
+            Log.d(TAG, "Dialog shown successfully");
+
         } catch (Exception e) {
             Log.e(TAG, "Fatal error in showSingleItemBillDetailsDialog: " + e.getMessage(), e);
             showSimpleBillDetailsDialog(bill);
@@ -410,8 +583,8 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
             TextView customerNameText = dialogView.findViewById(R.id.text_customer_name);
             TextView customerContactText = dialogView.findViewById(R.id.text_customer_contact);
             TextView totalItemsText = dialogView.findViewById(R.id.text_total_items);
-            TextView originalPriceText = dialogView.findViewById(R.id.text_original_price); // Thêm TextView giá gốc
-            TextView discountText = dialogView.findViewById(R.id.text_discount); // Thêm TextView voucher
+            TextView originalPriceText = dialogView.findViewById(R.id.text_original_price);
+            TextView discountText = dialogView.findViewById(R.id.text_discount);
             TextView totalAmountText = dialogView.findViewById(R.id.text_total_amount);
             RecyclerView itemsRecyclerView = dialogView.findViewById(R.id.recycler_view_bill_items);
 
@@ -419,8 +592,17 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
             String formattedBillId = formatBillId(bill.getBillId());
             Log.d(TAG, "Displaying details for bill: " + bill.getBillId() + " (" + formattedBillId + ")");
 
-            // Get customer details
-            SQLiteDatabase db = repository.db;
+            // Lấy thông tin khách hàng bằng phương thức chung
+            Map<String, String> customerInfo = getCustomerInfo(bill.getBillId());
+
+            // Áp dụng discount từ thông tin khách hàng
+            if (customerInfo.containsKey("discount_percentage")) {
+                int discountPercentage = Integer.parseInt(customerInfo.get("discount_percentage"));
+                if (discountPercentage > 0) {
+                    bill.setDiscountPercentage(discountPercentage);
+                    Log.d(TAG, "Applied discount " + discountPercentage + "% from customer info");
+                }
+            }
 
             // Set customer information even if we can't get it from DB
             billIdText.setText("Bill " + formattedBillId);
@@ -429,6 +611,11 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
             String formattedDate = bill.getFormattedDate();
             billDateText.setText("Date: " + formattedDate);
             Log.d(TAG, "Setting date: " + formattedDate);
+
+            // Hiển thị thông tin khách hàng từ Map
+            customerNameText.setText("Customer: " + customerInfo.get("name"));
+            customerContactText.setText(String.format("Phone: %s\nAddress: %s",
+                    customerInfo.get("phone"), customerInfo.get("address")));
 
             // Tính tổng số lượng và tổng tiền từ danh sách sản phẩm
             int totalQuantity = 0;
@@ -444,101 +631,31 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
             Log.d(TAG, "Items count: " + bill.getItems().size() + ", Total quantity: " + totalQuantity);
             Log.d(TAG, "Calculated subtotal: " + subtotal);
 
-            // Try to get customer info from database
-            Cursor customerCursor = null;
-            try {
-                customerCursor = db.rawQuery(
-                        "SELECT c.name, c.phone, c.address, c.email, b.created_at, b.total_amount, " +
-                                "b.discount_percentage " + // Thêm discount_percentage vào truy vấn
-                                "FROM bills b " +
-                                "INNER JOIN customers c ON b.customer_id = c.id " +
-                                "WHERE b.id = ? LIMIT 1",
-                        new String[]{String.valueOf(bill.getBillId())}
-                );
+            // Hiển thị các thông tin theo thứ tự: Quantity, Original Price, Voucher, Total Price
 
-                if (customerCursor.moveToFirst()) {
-                    // Get customer name, phone, address from database
-                    String customerName = customerCursor.getString(customerCursor.getColumnIndexOrThrow("name"));
-                    String customerPhone = customerCursor.getString(customerCursor.getColumnIndexOrThrow("phone"));
-                    String customerAddress = customerCursor.getString(customerCursor.getColumnIndexOrThrow("address"));
+            // Quantity (Tổng số lượng)
+            totalItemsText.setText("Quantity: " + totalQuantity);
 
-                    // Set customer information
-                    customerNameText.setText("Customer: " + customerName);
-                    customerContactText.setText(String.format("Phone: %s\nAddress: %s", customerPhone, customerAddress));
+            // Original Price (Giá gốc trước khi giảm)
+            originalPriceText.setText("Original Price: " +
+                    String.format(Locale.getDefault(), "%,.0fđ", subtotal));
 
-                    // Get total amount from database
-                    double dbTotal = customerCursor.getDouble(customerCursor.getColumnIndexOrThrow("total_amount"));
-
-                    // Lấy thông tin voucher
-                    int discountPercentage = 0;
-                    int discountColumnIndex = customerCursor.getColumnIndex("discount_percentage");
-                    if (discountColumnIndex != -1) {
-                        discountPercentage = customerCursor.getInt(discountColumnIndex);
-                        bill.setDiscountPercentage(discountPercentage);
-
-                        Log.d(TAG, "Discount percentage from DB: " + discountPercentage + "%");
-                    }
-
-                    // Hiển thị các thông tin theo thứ tự: Quantity, Original Price, Voucher, Total Price
-
-                    // Quantity (Tổng số lượng)
-                    totalItemsText.setText("Quantity: " + totalQuantity);
-
-                    // Original Price (Giá gốc trước khi giảm)
-                    originalPriceText.setText("Original Price: " +
-                            String.format(Locale.getDefault(), "%,.0fđ", subtotal));
-
-                    // Voucher (thông tin giảm giá)
-                    if (bill.hasDiscount()) {
-                        double discountAmount = bill.getDiscountAmount();
-                        discountText.setVisibility(View.VISIBLE);
-                        discountText.setText(String.format("Voucher: %s (-%s)",
-                                bill.getFormattedDiscount(),
-                                String.format(Locale.getDefault(), "%,.0fđ", discountAmount)));
-                        discountText.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_green_dark));
-                    } else {
-                        discountText.setVisibility(View.GONE);
-                    }
-
-                    // Total Price (Giá sau khi giảm)
-                    double finalTotal;
-                    if (bill.hasDiscount()) {
-                        finalTotal = bill.getTotalAmount();
-                    } else {
-                        finalTotal = (subtotal > 0 && Math.abs(subtotal - dbTotal) > 1000)
-                                ? subtotal : dbTotal;
-                    }
-
-                    totalAmountText.setText("Total Price: " +
-                            String.format(Locale.getDefault(), "%,.0fđ", finalTotal));
-
-                    Log.d(TAG, "DB total: " + dbTotal + ", Final total: " + finalTotal);
-                } else {
-                    // Fallback if customer not found
-                    customerNameText.setText("Customer: Unknown");
-                    customerContactText.setText("Phone: -\nAddress: -");
-
-                    // Hiển thị thông tin cơ bản nếu không tìm thấy khách hàng
-                    totalItemsText.setText("Quantity: " + totalQuantity);
-                    originalPriceText.setText("Original Price: " +
-                            String.format(Locale.getDefault(), "%,.0fđ", subtotal));
-                    discountText.setVisibility(View.GONE);
-                    totalAmountText.setText("Total Price: " +
-                            String.format(Locale.getDefault(), "%,.0fđ", subtotal));
-
-                    Log.w(TAG, "Customer not found for bill ID: " + bill.getBillId());
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error getting customer info: " + e.getMessage(), e);
-                // Fallback if error occurs
-                customerNameText.setText("Customer: Error loading data");
-                customerContactText.setText("Phone: -\nAddress: -");
-                totalAmountText.setText(String.format(Locale.getDefault(), "Total Price: %,.0fđ", subtotal));
-            } finally {
-                if (customerCursor != null) {
-                    customerCursor.close();
-                }
+            // Voucher (thông tin giảm giá)
+            if (bill.hasDiscount()) {
+                double discountAmount = bill.getDiscountAmount();
+                discountText.setVisibility(View.VISIBLE);
+                discountText.setText(String.format("Voucher: %s (-%s)",
+                        bill.getFormattedDiscount(),
+                        String.format(Locale.getDefault(), "%,.0fđ", discountAmount)));
+                discountText.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_green_dark));
+            } else {
+                discountText.setVisibility(View.GONE);
             }
+
+            // Total Price (Giá sau khi giảm)
+            double finalTotal = bill.hasDiscount() ? bill.getTotalAmount() : subtotal;
+            totalAmountText.setText("Total Price: " +
+                    String.format(Locale.getDefault(), "%,.0fđ", finalTotal));
 
             // Setup RecyclerView for bill items
             itemsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -576,7 +693,7 @@ public class BillListFragment extends Fragment implements BillAdapter.OnBillClic
                     "SELECT DISTINCT b.id as bill_id, b.customer_id, b.total_amount, b.created_at, " +
                             "COUNT(bd.id) as item_count, b.discount_percentage " +  // Thêm discount_percentage
                             "FROM bills b " +
-                            "INNER JOIN bill_details bd ON b.id = bd.bill_id " +
+                            "LEFT JOIN bill_details bd ON b.id = bd.bill_id " +
                             "GROUP BY b.id " +
                             "ORDER BY b.created_at DESC", null);
 
