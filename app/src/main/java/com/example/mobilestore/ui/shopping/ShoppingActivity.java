@@ -37,6 +37,7 @@ import com.example.mobilestore.ui.product_detail.ProductActivity;
 import com.example.mobilestore.ui.payment.PaymentActivity;
 import com.example.mobilestore.ui.customer_profile.ProfileActivity;
 import com.example.mobilestore.data.cart.Cart;
+import com.example.mobilestore.ui.cart.CartActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +82,6 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Remove listener to prevent memory leaks
         if (repository != null) {
             repository.removeListener(this);
         }
@@ -108,7 +108,7 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
 
     private void setupRecyclerView() {
         try {
-            // Use phone instead of product as before
+            // Use phone
             allPhones = new ArrayList<>();
             filteredPhones = new ArrayList<>();
 
@@ -131,7 +131,7 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
             // Filter
             filteredPhones.addAll(allPhones);
 
-            // Set up the RecyclerView with a grid layout (2 columns)
+            // Set up the RecyclerView
             if (productRecyclerView != null) {
                 GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
                 productRecyclerView.setLayoutManager(gridLayoutManager);
@@ -466,7 +466,7 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
     @Override
     public void onDataChanged() {};
 
-    // Adapter class for RecyclerView using the item_phone.xml layout
+    // Adapter class for RecyclerView
     public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductViewHolder> {
         private List<Phone> products;
         private ShoppingActivity context;
@@ -509,6 +509,9 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
             try {
                 Phone product = products.get(position);
 
+                // Kiểm tra tình trạng tồn kho
+                boolean isOutOfStock = (product.getStockQuantity() <= 0);
+
                 // Display product information with the layout
                 if (holder.tvPhoneName != null) {
                     holder.tvPhoneName.setText(product.getPhoneName());
@@ -523,6 +526,46 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
                     holder.tvBrand.setText(product.getBrand());
                 }
 
+                // Set product image based on brand
+                if (holder.imgPhone != null) {
+                    String brand = product.getBrand().toLowerCase();
+                    try {
+                        if (brand.contains("apple") || brand.contains("iphone")) {
+                            holder.imgPhone.setImageResource(R.drawable.phone_sample);
+                        } else if (brand.contains("samsung") || brand.contains("galaxy")) {
+                            holder.imgPhone.setImageResource(R.drawable.samsung);
+                        } else if (brand.contains("redmi") || brand.contains("xiaomi")) {
+                            holder.imgPhone.setImageResource(R.drawable.redmi);
+                        } else if (brand.contains("oppo")) {
+                            holder.imgPhone.setImageResource(R.drawable.oppo);
+                        } else {
+                            holder.imgPhone.setImageResource(R.drawable.default_phone);
+                        }
+                    } catch (Resources.NotFoundException e) {
+                        holder.imgPhone.setImageResource(android.R.drawable.ic_menu_gallery);
+                    }
+                }
+
+                // Hiển thị overlay và text SOLD OUT khi hết hàng
+                if (holder.overlayView != null) {
+                    holder.overlayView.setVisibility(isOutOfStock ? View.VISIBLE : View.GONE);
+                }
+
+                if (holder.tvSoldOutOverlay != null) {
+                    holder.tvSoldOutOverlay.setVisibility(isOutOfStock ? View.VISIBLE : View.GONE);
+                }
+
+                // Hiển thị trạng thái tồn kho
+                if (holder.tvStockStatus != null) {
+                    if (isOutOfStock) {
+                        holder.tvStockStatus.setText("Out of Stock");
+                        holder.tvStockStatus.setTextColor(context.getResources().getColor(android.R.color.holo_red_light));
+                    } else {
+                        holder.tvStockStatus.setText("In Stock");
+                        holder.tvStockStatus.setTextColor(context.getResources().getColor(android.R.color.holo_green_dark));
+                    }
+                }
+
                 // Random star
                 if (holder.ratingBar != null) {
                     float rating = getDeterministicRating(product.getId());
@@ -532,10 +575,16 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
                     }
                 }
 
-                // Show "New" badge for some products
+                // Hiển thị badge "NEW" chỉ khi sản phẩm còn hàng
                 if (holder.tvBadge != null) {
-                    if (position % 3 == 0) {
+                    if (position % 3 == 0 && !isOutOfStock) {
                         holder.tvBadge.setVisibility(View.VISIBLE);
+                        holder.tvBadge.setText("NEW");
+                        try {
+                            holder.tvBadge.setBackgroundResource(R.drawable.badge_background);
+                        } catch (Resources.NotFoundException e) {
+                            holder.tvBadge.setBackgroundColor(getResources().getColor(android.R.color.holo_green_dark));
+                        }
                     } else {
                         holder.tvBadge.setVisibility(View.GONE);
                     }
@@ -560,22 +609,29 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
 
                 // Set up event for add to cart button
                 if (holder.btnAddToCart != null) {
+                    // Vô hiệu hóa nút "Add to Cart" nếu sản phẩm hết hàng
+                    holder.btnAddToCart.setEnabled(!isOutOfStock);
+                    holder.btnAddToCart.setAlpha(isOutOfStock ? 0.5f : 1.0f);
+
                     holder.btnAddToCart.setOnClickListener(v -> {
-                        try {
-                            Cart.getInstance(context).addItem(product, 1);
+                        if (isOutOfStock) {
+                            Toast.makeText(context, product.getPhoneName() + " is currently out of stock", Toast.LENGTH_SHORT).show();
+                        } else {
+                            try {
+                                Cart.getInstance(context).addItem(product, 1);
+                                Toast.makeText(context, "Added " + product.getPhoneName() + " to cart", Toast.LENGTH_SHORT).show();
 
-                            Toast.makeText(context, "Added " + product.getPhoneName() + " to cart", Toast.LENGTH_SHORT).show();
+                                // Create Intent with full product information
+                                Intent intent = new Intent(context, ProductActivity.class);
+                                intent.putExtra("PRODUCT_NAME", product.getPhoneName());
+                                intent.putExtra("PRODUCT_PRICE", String.format("%,.0fđ", product.getPrice()));
+                                intent.putExtra("FROM_CART", true);
 
-                            // Create Intent with full product information
-                            Intent intent = new Intent(context, ProductActivity.class);
-                            intent.putExtra("PRODUCT_NAME", product.getPhoneName());
-                            intent.putExtra("PRODUCT_PRICE", String.format("%,.0fđ", product.getPrice()));
-                            intent.putExtra("FROM_CART", true);
-
-                            // Start Activity
-                            context.startActivity(intent);
-                        } catch (Exception e) {
-                            Toast.makeText(context, "Error navigating to product details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                // Start Activity
+                                context.startActivity(intent);
+                            } catch (Exception e) {
+                                Toast.makeText(context, "Error navigating to product details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
                         }
                     });
                 }
@@ -583,13 +639,21 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
                 // Handle View Details button event (if exists in new layout)
                 if (holder.btnViewDetails != null) {
                     holder.btnViewDetails.setOnClickListener(v -> {
-                        goToProductDetail(product);
+                        if (isOutOfStock) {
+                            Toast.makeText(context, product.getPhoneName() + " is currently out of stock", Toast.LENGTH_SHORT).show();
+                        } else {
+                            goToProductDetail(product);
+                        }
                     });
                 }
 
                 // Handle event when clicking on the entire item
                 holder.itemView.setOnClickListener(view -> {
-                    goToProductDetail(product);
+                    if (isOutOfStock) {
+                        Toast.makeText(context, product.getPhoneName() + " is currently out of stock", Toast.LENGTH_SHORT).show();
+                    } else {
+                        goToProductDetail(product);
+                    }
                 });
             } catch (Exception e) {
                 Toast.makeText(context, "Error binding product view: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -604,7 +668,8 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
         // ViewHolder for the item_phone.xml layout
         class ProductViewHolder extends RecyclerView.ViewHolder {
             ImageView imgPhone;
-            TextView tvBrand, tvPhoneName, tvPrice, tvRatingValue, tvBadge;
+            View overlayView;
+            TextView tvBrand, tvPhoneName, tvPrice, tvRatingValue, tvBadge, tvSoldOutOverlay, tvStockStatus;
             RatingBar ratingBar;
             ImageButton btnFavorite, btnAddToCart;
             Button btnViewDetails;
@@ -614,15 +679,19 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
                 try {
                     // Find views in the item_phone.xml layout
                     imgPhone = itemView.findViewById(R.id.imgPhone);
+                    overlayView = itemView.findViewById(R.id.overlayView);
+                    tvSoldOutOverlay = itemView.findViewById(R.id.tvSoldOutOverlay);
                     tvBrand = itemView.findViewById(R.id.tvBrand);
                     tvPhoneName = itemView.findViewById(R.id.tvPhoneName);
                     tvPrice = itemView.findViewById(R.id.tvPrice);
                     tvRatingValue = itemView.findViewById(R.id.tvRatingValue);
                     tvBadge = itemView.findViewById(R.id.tvBadge);
+                    tvStockStatus = itemView.findViewById(R.id.tvStockStatus);
                     ratingBar = itemView.findViewById(R.id.ratingBar);
                     btnFavorite = itemView.findViewById(R.id.btnFavorite);
                     btnAddToCart = itemView.findViewById(R.id.btnAddToCart);
                 } catch (Exception e) {
+                    // Handle null references gracefully
                 }
             }
         }
@@ -675,95 +744,40 @@ public class ShoppingActivity extends AppCompatActivity implements ProductReposi
     }
 
     private void simulateCartNavigation() {
-        if (btnProducts != null) {
-            btnProducts.setBackgroundResource(R.drawable.tab_background);
-            btnProducts.setTextColor(getResources().getColor(android.R.color.white, null));
-            btnProducts.setAlpha(0.9f);
-        }
-
-        // Set Cart button to selected state
-        if (btnShop != null) {
-            btnShop.setBackgroundResource(R.drawable.selected_tab_background);
-            btnShop.setTextColor(getResources().getColor(android.R.color.white, null));
-            btnShop.setAlpha(1.0f);
-        }
-
-        // Display a Dialog simulating the cart screen
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
-        builder.setTitle("Shopping Cart");
-
-        // Get data from Cart class
-        Cart cart = Cart.getInstance(this);
-        List<Cart.CartItem> cartItems = cart.getAllItems();
-
-        if (cartItems.isEmpty()) {
-            // Empty
-            builder.setMessage("Your cart is empty.");
-            builder.setPositiveButton("Shop Now", (dialog, id) -> {
-                // Return to Phones tab
-                btnProducts.performClick();
-            });
-        } else {
-            // Display product in the cart
-            StringBuilder cartContent = new StringBuilder();
-            double overallTotalPrice = 0;
-
-            for (Cart.CartItem item : cartItems) {
-                String productName = item.phone.getPhoneName();
-                double unitPrice = item.phone.getPrice();
-                double totalPrice = unitPrice * item.quantity;
-
-                cartContent.append("  • Product: ").append(productName).append("\n")
-                        .append("  • Price: ").append(formatPrice(unitPrice)).append("\n")
-                        .append("  • Quantity: ").append(item.quantity).append("\n")
-                        .append("  • Total Price: ").append(formatPrice(totalPrice)).append("\n");
-
-                overallTotalPrice += totalPrice;
+        try {
+            // Cập nhật giao diện các button
+            if (btnProducts != null) {
+                btnProducts.setBackgroundResource(R.drawable.tab_background);
+                btnProducts.setTextColor(getResources().getColor(android.R.color.white, null));
+                btnProducts.setAlpha(0.9f);
             }
 
-            builder.setMessage(cartContent.toString());
+            // Set Cart button to selected state
+            if (btnShop != null) {
+                btnShop.setBackgroundResource(R.drawable.selected_tab_background);
+                btnShop.setTextColor(getResources().getColor(android.R.color.white, null));
+                btnShop.setAlpha(1.0f);
+            }
 
-            builder.setPositiveButton("Checkout", (dialog, id) -> {
-                // Nếu có sản phẩm trong giỏ hàng, lấy sản phẩm đầu tiên để thanh toán
-                if (!cartItems.isEmpty()) {
-                    Cart.CartItem item = cartItems.get(0);
+            // Chuyển đến CartActivity
+            Intent intent = new Intent(ShoppingActivity.this, CartActivity.class);
+            startActivity(intent);
 
-                    // Tạo Intent để chuyển sang PaymentActivity với thông tin sản phẩm
-                    Intent intent = new Intent(ShoppingActivity.this, PaymentActivity.class);
-                    intent.putExtra("PRODUCT_NAME", item.phone.getPhoneName());
-                    intent.putExtra("PRODUCT_QUANTITY", item.quantity);
-                    intent.putExtra("PRODUCT_PRICE", formatPrice(item.phone.getPrice()));
-                    intent.putExtra("FROM_CART", true);
-
-                    // Log để kiểm tra dữ liệu trước khi chuyển màn hình
-                    android.util.Log.d("ShoppingActivity", "Sending to PaymentActivity: " +
-                            "Product=" + item.phone.getPhoneName() +
-                            ", Quantity=" + item.quantity +
-                            ", Price=" + formatPrice(item.phone.getPrice()));
-
-                    startActivity(intent);
-                } else {
-                    Toast.makeText(ShoppingActivity.this, "Cart is empty", Toast.LENGTH_SHORT).show();
-                }
-            });
-
-            builder.setNegativeButton("Continue Shopping", (dialog, id) -> {
-                // Return to Phones tab
-                btnProducts.performClick();
-            });
-
-            // Delete Cart
-            builder.setNeutralButton("Clear Cart", (dialog, id) -> {
-                cart.clear();
-                Toast.makeText(this, "Cart cleared", Toast.LENGTH_SHORT).show();
-            });
+        } catch (Exception e) {
+            Toast.makeText(this, "Error navigating to cart: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-
-        androidx.appcompat.app.AlertDialog dialog = builder.create();
-        dialog.show();
     }
 
     private String formatPrice(double price) {
         return String.format("%,.0fđ", price);
+    }
+
+    // Tạo badge background cho Sold Out nếu chưa tồn tại
+    private void createSoldOutBadgeResource() {
+        try {
+            getResources().getDrawable(R.drawable.badge_sold_out_background);
+        } catch (Resources.NotFoundException e) {
+            Toast.makeText(this, "Creating sold out badge resource", Toast.LENGTH_SHORT).show();
+        }
     }
 }

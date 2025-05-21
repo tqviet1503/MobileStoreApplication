@@ -24,8 +24,8 @@ public class AppDatabase extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         //Profit table
         db.execSQL("CREATE TABLE profit (" +
-                        "total_sold INTEGER, " +
-                        "income INTEGER)"
+                "total_sold INTEGER, " +
+                "income INTEGER)"
         );
 
         // Brands table
@@ -55,25 +55,26 @@ public class AppDatabase extends SQLiteOpenHelper {
         // Customers table
         db.execSQL(
                 "CREATE TABLE customers (" +
-                    "id TEXT," +
-                    "name TEXT NOT NULL," +
-                    "phone TEXT NOT NULL," +  
-                    "email TEXT," +
-                    "address TEXT NOT NULL," + 
-                    "total_orders INTEGER DEFAULT 0," +
-                    "total_spent REAL DEFAULT 0.0," +   
-                    "loyalty_points INTEGER DEFAULT 0," + 
-                    "created_at DATETIME DEFAULT CURRENT_TIMESTAMP," + 
-                    "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP" + 
-                    ")"
+                        "id TEXT PRIMARY KEY," +
+                        "name TEXT NOT NULL," +
+                        "phone TEXT NOT NULL," +
+                        "email TEXT," +
+                        "address TEXT NOT NULL," +
+                        "total_orders INTEGER DEFAULT 0," +
+                        "total_spent REAL DEFAULT 0.0," +
+                        "loyalty_points INTEGER DEFAULT 0," +
+                        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                        "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP" +
+                        ")"
         );
 
-        // Bills table
+        // Bills table with discount_percentage
         db.execSQL(
                 "CREATE TABLE bills (" +
                         "id INTEGER PRIMARY KEY," +
-                        "customer_id TEXT," +
+                        "customer_id TEXT NOT NULL," +
                         "total_amount REAL NOT NULL," +
+                        "discount_percentage INTEGER DEFAULT 0," + // discount_percentage
                         "created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
                         "FOREIGN KEY (customer_id) REFERENCES customers(id))"
         );
@@ -94,13 +95,23 @@ public class AppDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS bill_details");
-        db.execSQL("DROP TABLE IF EXISTS bills");
-        db.execSQL("DROP TABLE IF EXISTS phones");
-        db.execSQL("DROP TABLE IF EXISTS customers");
-        db.execSQL("DROP TABLE IF EXISTS brands");
-        db.execSQL("DROP TABLE IF EXISTS profit");
-        // Create new tables
-        onCreate(db);
+        if (oldVersion < 9) {
+            try {
+                db.execSQL("ALTER TABLE bills ADD COLUMN discount_percentage INTEGER DEFAULT 0");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (oldVersion < 8) {
+            db.execSQL("DROP TABLE IF EXISTS bill_details");
+            db.execSQL("DROP TABLE IF EXISTS bills");
+            db.execSQL("DROP TABLE IF EXISTS phones");
+            db.execSQL("DROP TABLE IF EXISTS customers");
+            db.execSQL("DROP TABLE IF EXISTS brands");
+            db.execSQL("DROP TABLE IF EXISTS profit");
+            // Create new tables
+            onCreate(db);
+        }
     }
 }

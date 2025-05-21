@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -91,7 +90,7 @@ public class CustomerDataManager {
             editor.putString(KEY_CUSTOMER_NAME, "Quoc Viet");
             editor.putString(KEY_CUSTOMER_ID, "#12345");
             editor.putString(KEY_CUSTOMER_STATUS, "Active Customer");
-            editor.putString(KEY_CUSTOMER_PHONE, "+84 12 456 789");
+            editor.putString(KEY_CUSTOMER_PHONE, "+84 123 456 789");
             editor.putString(KEY_CUSTOMER_EMAIL, "customer@example.com");
             editor.putString(KEY_CUSTOMER_ADDRESS, "Thu Duc City, HCMC");
             editor.putInt(KEY_TOTAL_ORDERS, 0);
@@ -171,9 +170,9 @@ public class CustomerDataManager {
         float newTotalSpent = currentSpent + (float) orderAmount;
         editor.putFloat(KEY_TOTAL_SPENT, newTotalSpent);
 
-        // Cập nhật điểm tích lũy (1% giá trị đơn hàng)
+        // Cập nhật điểm tích lũy (1 điểm cho mỗi 100,000đ)
         int currentPoints = prefs.getInt(KEY_LOYALTY_POINTS, 0);
-        int pointsEarned = (int) (orderAmount * 0.0001); // 0.01% của đơn hàng
+        int pointsEarned = (int) (orderAmount / 100000); // 1 điểm cho mỗi 100,000đ
         editor.putInt(KEY_LOYALTY_POINTS, currentPoints + pointsEarned);
 
         // Lưu các thay đổi
@@ -192,7 +191,8 @@ public class CustomerDataManager {
             ordersList = new ArrayList<>();
         }
 
-        ordersList.add(order);
+        // Thêm đơn hàng mới vào đầu danh sách (đơn hàng mới nhất đầu tiên)
+        ordersList.add(0, order);
         saveOrdersList();
 
         // Cập nhật tổng tiền và số lượng đơn hàng
@@ -253,6 +253,15 @@ public class CustomerDataManager {
         } catch (Exception e) {
             Log.e("CustomerDataManager", "Error loading orders list: " + e.getMessage());
             ordersList = new ArrayList<>();
+
+            // If we get a ClassCastException or ClassNotFoundException, it's likely because
+            // we've updated the Order class structure. In this case, we'll just start with
+            // a fresh orders list rather than crashing the app.
+            if (e instanceof ClassCastException || e instanceof ClassNotFoundException) {
+                Log.w("CustomerDataManager", "Order class structure may have changed. Starting with fresh orders list.");
+                // Clear the old data
+                prefs.edit().remove(KEY_ORDERS_LIST).apply();
+            }
         }
     }
 }

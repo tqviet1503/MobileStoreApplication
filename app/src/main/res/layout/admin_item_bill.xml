@@ -4,43 +4,74 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="16dp"
+    app:cardCornerRadius="8dp"
     app:cardElevation="4dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="horizontal"
+        android:padding="12dp">
 
-        <!-- Product Info -->
+        <ImageView
+            android:id="@+id/ivBillIcon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/phone_sample"
+            android:contentDescription="Bill icon"
+            android:layout_gravity="center_vertical" />
+
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="12dp">
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:orientation="vertical">
 
-            <!-- Brand -->
-            <TextView
-                android:id="@+id/tvTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Bill ID"
-                android:textColor="#757575"
-                android:textSize="12sp" />
-
-            <!-- Phone Name -->
+            <!-- Bill ID -->
             <TextView
                 android:id="@+id/tvId"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:ellipsize="end"
-                android:maxLines="2"
-                android:text="ID"
-                android:textColor="#212121"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:text="Bill #12345"
+                android:textStyle="bold"
+                android:textSize="16sp" />
+
+            <!-- Date moved to new line -->
+            <TextView
+                android:id="@+id/tvDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="18/05/2023 15:30"
+                android:textSize="12sp"
+                android:textStyle="italic"
+                android:layout_marginTop="2dp" />
+
+            <TextView
+                android:id="@+id/tvItems"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Multiple items (3)"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/tvTotal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1,200,000đ"
+                android:textSize="14sp"
+                android:textStyle="italic"
+                android:layout_marginTop="4dp" />
 
         </LinearLayout>
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_media_play"
+            android:layout_gravity="center_vertical"
+            android:contentDescription="View details" />
+
     </LinearLayout>
 </androidx.cardview.widget.CardView>

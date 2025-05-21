@@ -7,47 +7,71 @@
 
     <TextView
         android:id="@+id/text_bill_id"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="18sp"
+        android:text="Bill #12345"
         android:textStyle="bold"
-        android:layout_marginBottom="8dp"/>
+        android:textSize="18sp"
+        android:gravity="center"
+        android:layout_marginBottom="8dp" />
 
     <TextView
-        android:id="@+id/text_date"
-        android:layout_width="wrap_content"
+        android:id="@+id/text_bill_date"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"/>
+        android:text="Date: 01/01/2023"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#DDDDDD"
+        android:layout_marginBottom="16dp" />
 
     <TextView
         android:id="@+id/text_customer_info"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"/>
+        android:text="Customer: John Doe\nPhone: 123456789\nAddress: 123 Example St"
+        android:layout_marginBottom="16dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#DDDDDD"
+        android:layout_marginBottom="16dp" />
 
     <TextView
         android:id="@+id/text_phone_info"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"/>
+        android:text="Product: iPhone 15 Pro Max"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
 
     <TextView
         android:id="@+id/text_quantity"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"/>
+        android:text="Quantity: 1"
+        android:layout_marginBottom="8dp" />
 
+    <!-- Thêm TextView mới cho hiển thị thông tin discount -->
     <TextView
-        android:id="@+id/text_unit_price"
-        android:layout_width="wrap_content"
+        android:id="@+id/text_discount"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"/>
+        android:text="Discount: -20% (-200,000đ)"
+        android:textColor="#4CAF50"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp" />
 
     <TextView
         android:id="@+id/text_total_amount"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textStyle="bold"
-        android:textSize="16sp"/>
+        android:text="Total Price: 1,000,000đ"
+        android:textStyle="bold" />
 
 </LinearLayout>
